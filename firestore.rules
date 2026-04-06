@@ -1,0 +1,60 @@
+// firestore.rules
+// Deploy with: firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: is user authenticated?
+    function isAuth() { return request.auth != null; }
+
+    // Helper: check if user has admin role in DB
+    function isAdmin() {
+      return isAuth() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Helper: is the requesting user the owner of the doc?
+    function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
+
+    // ── Users ──────────────────────────────────────────────
+    match /users/{userId} {
+      // Anyone can read their own profile; admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Only the owner can create their own doc (on registration)
+      allow create: if isOwner(userId);
+
+      // Owner can update name/phone; admin can update role/totalPaid
+      allow update: if isOwner(userId) || isAdmin();
+
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // ── Payments ───────────────────────────────────────────
+    match /payments/{paymentId} {
+      // Members can read only their own payments; admins see all
+      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isAdmin());
+
+      // Any authenticated member can create a payment submission
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid
+                       && request.resource.data.status == 'pending';
+
+      // Only admins can update (approve/reject)
+      allow update: if isAdmin();
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ── Payment Numbers (bKash/Nagad) ──────────────────────
+    match /paymentNumbers/{numId} {
+      // Any logged-in member can read (to display on pay page)
+      allow read: if isAuth();
+
+      // Only admins can create, update, delete
+      allow write: if isAdmin();
+    }
+  }
+}
