@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, orderBy, query, limit } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { format } from 'date-fns';
 import { Activity, UserPlus, CheckCircle, XCircle, Settings } from 'lucide-react';
 
 const TYPE_META = {
-  member_joined: { icon: UserPlus,     color: 'bg-tide-100 text-tide-700',    label: 'New Member' },
-  approved:      { icon: CheckCircle,  color: 'bg-green-100 text-green-700',  label: 'Approved' },
-  rejected:      { icon: XCircle,      color: 'bg-red-100 text-red-600',      label: 'Rejected' },
-  settings:      { icon: Settings,     color: 'bg-slate-100 text-slate-600',  label: 'Settings' },
+  member_joined: { icon: UserPlus,    color: 'bg-tide-100 text-tide-700',   label: 'New Member' },
+  approved:      { icon: CheckCircle, color: 'bg-green-100 text-green-700', label: 'Approved' },
+  rejected:      { icon: XCircle,     color: 'bg-red-100 text-red-600',     label: 'Rejected' },
+  settings:      { icon: Settings,    color: 'bg-slate-100 text-slate-600', label: 'Settings' },
 };
 
 export default function AdminActivity() {
@@ -17,10 +17,17 @@ export default function AdminActivity() {
 
   useEffect(() => {
     (async () => {
-      const q = query(collection(db, 'activityLogs'), orderBy('createdAt', 'desc'), limit(100));
-      const snap = await getDocs(q);
-      setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false);
+      try {
+        const snap = await getDocs(collection(db, 'activityLogs'));
+        const sorted = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        setLogs(sorted);
+      } catch(e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -30,7 +37,6 @@ export default function AdminActivity() {
         <h1 className="font-display text-3xl font-bold text-slate-800">Activity Log</h1>
         <p className="text-slate-500 mt-1">সকল admin action ও member join এর ইতিহাস</p>
       </div>
-
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-400">Loading...</div>
@@ -38,6 +44,7 @@ export default function AdminActivity() {
           <div className="p-12 text-center">
             <Activity className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500">এখনো কোনো activity নেই</p>
+            <p className="text-xs text-slate-400 mt-1">নতুন member join করলে বা payment approve/reject করলে এখানে দেখাবে</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -45,7 +52,7 @@ export default function AdminActivity() {
               const meta = TYPE_META[log.type] || TYPE_META.settings;
               const Icon = meta.icon;
               return (
-                <div key={log.id} className="flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors">
+                <div key={log.id} className="flex items-start gap-4 p-4 hover:bg-slate-50">
                   <div className={`p-2 rounded-xl flex-shrink-0 ${meta.color}`}>
                     <Icon className="w-4 h-4" />
                   </div>
