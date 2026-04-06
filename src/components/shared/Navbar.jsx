@@ -9,7 +9,7 @@ import {
 function DwiptoriLogo() {
   return (
     <div className="flex items-center gap-3">
-      <img src="/logo.jpg" alt="Dwiptori Logo" className="w-10 h-10 rounded-full object-cover" />
+      <img src="/dwiptori_logo.jpg" alt="Dwiptori Logo" className="w-10 h-10 rounded-full object-cover" />
       <div>
         <div className="font-display font-bold text-lg leading-tight text-tide-800">Dwiptori</div>
         <div className="text-xs text-tide-500 font-bengali leading-tight">দ্বীপ তরী</div>
