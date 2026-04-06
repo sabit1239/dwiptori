@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc, orderBy, query, increment, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, orderBy, query, increment } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../hooks/useAuth';
 import { format } from 'date-fns';
@@ -17,34 +17,27 @@ export default function AdminPayments() {
 
   async function load() {
     setLoading(true);
-    const snap = await getDocs(query(collection(db, 'payments'), orderBy('createdAt', 'desc')));
-    setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    try {
+      const snap = await getDocs(query(collection(db, 'payments'), orderBy('createdAt', 'desc')));
+      setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch(e) {
+      toast.error('Load failed');
+    }
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
 
-  async function logActivity(type, message, detail) {
-    await addDoc(collection(db, 'activityLogs'), {
-      type, message, detail,
-      adminName: profile?.name,
-      adminEmail: profile?.email,
-      createdAt: serverTimestamp(),
-    });
-  }
-
   async function approve(payment) {
     setActing(payment.id);
     try {
       await updateDoc(doc(db, 'payments', payment.id), { status: 'approved' });
-      await updateDoc(doc(db, 'users', payment.uid), { totalPaid: increment(payment.amount || 0) });
-      await logActivity('approved',
-        `${payment.memberName} এর payment approve করা হয়েছে`,
-        `TrxID: ${payment.trxId} · Amount: ৳${payment.amount}`
-      );
+      await updateDoc(doc(db, 'users', payment.uid), { totalPaid: increment(Number(payment.amount) || 0) });
       setPayments(ps => ps.map(p => p.id === payment.id ? { ...p, status: 'approved' } : p));
-      toast.success(`Payment approved!`);
-    } catch { toast.error('Failed to approve'); }
+      toast.success('Approved!');
+    } catch(e) {
+      toast.error('Failed: ' + e.message);
+    }
     setActing(null);
   }
 
@@ -52,13 +45,11 @@ export default function AdminPayments() {
     setActing(payment.id);
     try {
       await updateDoc(doc(db, 'payments', payment.id), { status: 'rejected' });
-      await logActivity('rejected',
-        `${payment.memberName} এর payment reject করা হয়েছে`,
-        `TrxID: ${payment.trxId} · Amount: ৳${payment.amount}`
-      );
       setPayments(ps => ps.map(p => p.id === payment.id ? { ...p, status: 'rejected' } : p));
-      toast.success(`Payment rejected!`);
-    } catch { toast.error('Failed to reject'); }
+      toast.success('Rejected!');
+    } catch(e) {
+      toast.error('Failed: ' + e.message);
+    }
     setActing(null);
   }
 
@@ -81,8 +72,8 @@ export default function AdminPayments() {
         {FILTERS.map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all
-              ${filter === f ? 'bg-tide-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
-            {f} <span className="ml-1 opacity-70">({counts[f]})</span>
+              ${filter === f ? 'bg-tide-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
+            {f} ({counts[f]})
           </button>
         ))}
       </div>
@@ -94,48 +85,48 @@ export default function AdminPayments() {
         ) : (
           <div className="divide-y divide-slate-100">
             {filtered.map(p => (
-              <div key={p.id} className="p-5 hover:bg-slate-50 transition-colors">
+              <div key={p.id} className="p-5 hover:bg-slate-50">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="flex-1 grid grid-cols-2 gap-3">
                     <div>
-                      <div className="text-xs text-slate-400 uppercase tracking-wide">Member</div>
+                      <div className="text-xs text-slate-400 uppercase">Member</div>
                       <div className="font-semibold text-slate-800">{p.memberName}</div>
                       <div className="text-xs text-slate-500">{p.memberEmail}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-slate-400 uppercase tracking-wide">Sender</div>
-                      <div className="font-medium text-slate-800">{p.senderName}</div>
+                      <div className="text-xs text-slate-400 uppercase">Sender</div>
+                      <div className="font-medium">{p.senderName}</div>
                       <div className="text-xs text-slate-500">{p.senderPhone}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-slate-400 uppercase tracking-wide">TrxID</div>
+                      <div className="text-xs text-slate-400 uppercase">TrxID</div>
                       <div className="font-mono text-sm font-semibold text-tide-700">{p.trxId}</div>
                       <div className="text-xs text-slate-500">{p.method}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-slate-400 uppercase tracking-wide">Amount</div>
-                      <div className="text-xl font-display font-bold text-slate-800">৳{p.amount?.toLocaleString()}</div>
+                      <div className="text-xs text-slate-400 uppercase">Amount</div>
+                      <div className="text-xl font-bold text-slate-800">৳{p.amount?.toLocaleString()}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-slate-400 uppercase tracking-wide">Date</div>
-                      <div className="text-sm text-slate-700">
-                        {p.createdAt?.toDate ? format(p.createdAt.toDate(), 'dd MMM yyyy, hh:mm a') : '—'}
-                      </div>
+                      <div className="text-xs text-slate-400 uppercase">Date</div>
+                      <div className="text-sm">{p.createdAt?.toDate ? format(p.createdAt.toDate(), 'dd MMM yyyy') : '—'}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-slate-400 uppercase tracking-wide">Status</div>
+                      <div className="text-xs text-slate-400 uppercase">Status</div>
                       {p.status === 'pending'  && <span className="badge-pending"><Clock className="w-3 h-3" />Pending</span>}
                       {p.status === 'approved' && <span className="badge-approved"><CheckCircle className="w-3 h-3" />Approved</span>}
                       {p.status === 'rejected' && <span className="badge-rejected"><XCircle className="w-3 h-3" />Rejected</span>}
                     </div>
                   </div>
                   {p.status === 'pending' && (
-                    <div className="flex gap-2 sm:flex-col">
-                      <button onClick={() => approve(p)} disabled={acting === p.id} className="btn-success py-2 px-4 text-sm flex-1 sm:flex-none">
+                    <div className="flex gap-2">
+                      <button onClick={() => approve(p)} disabled={acting === p.id}
+                        className="btn-success py-2 px-4 text-sm">
                         <CheckCircle className="w-4 h-4" />
                         {acting === p.id ? '...' : 'Approve'}
                       </button>
-                      <button onClick={() => reject(p)} disabled={acting === p.id} className="btn-danger py-2 px-4 text-sm flex-1 sm:flex-none">
+                      <button onClick={() => reject(p)} disabled={acting === p.id}
+                        className="btn-danger py-2 px-4 text-sm">
                         <XCircle className="w-4 h-4" />
                         {acting === p.id ? '...' : 'Reject'}
                       </button>

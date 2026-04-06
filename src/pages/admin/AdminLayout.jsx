@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Waves, Menu, X, Home, Activity } from 'lucide-react';
+import logo from '../../assets/logo.jpg';
+import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity } from 'lucide-react';
 
 const LINKS = [
-  { to: '/admin',           label: 'Overview',      icon: LayoutDashboard, end: true },
-  { to: '/admin/payments',  label: 'Payments',      icon: CreditCard },
-  { to: '/admin/members',   label: 'Members',       icon: Users },
-  { to: '/admin/numbers',   label: 'Pay Numbers',   icon: Phone },
-  { to: '/admin/activity',  label: 'Activity Log',  icon: Activity },
+  { to: '/admin',          label: 'Overview',     icon: LayoutDashboard, end: true },
+  { to: '/admin/payments', label: 'Payments',     icon: CreditCard },
+  { to: '/admin/members',  label: 'Members',      icon: Users },
+  { to: '/admin/numbers',  label: 'Pay Numbers',  icon: Phone },
+  { to: '/admin/activity', label: 'Activity Log', icon: Activity },
 ];
 
 export default function AdminLayout() {
@@ -26,7 +27,7 @@ export default function AdminLayout() {
       {mobile && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
       <div className={`relative flex flex-col bg-tide-950 text-white ${mobile ? 'w-72 ml-auto h-full shadow-2xl' : 'w-64 h-full'}`}>
         <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
-          <img src="/dwiptori_logo.jpg" alt="Logo" className="w-9 h-9 rounded-full object-cover" />
+          <img src={logo} alt="Logo" className="w-9 h-9 rounded-full object-cover" />
           <div>
             <div className="font-display font-bold text-lg">Dwiptori</div>
             <div className="text-tide-400 text-xs">Admin Panel</div>
@@ -43,7 +44,7 @@ export default function AdminLayout() {
               onClick={() => mobile && setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                ${isActive ? 'bg-tide-600 text-white shadow-glow' : 'text-tide-300 hover:bg-white/10 hover:text-white'}`}>
+                ${isActive ? 'bg-tide-600 text-white' : 'text-tide-300 hover:bg-white/10 hover:text-white'}`}>
               <Icon className="w-4 h-4" />
               {label}
             </NavLink>
@@ -80,7 +81,7 @@ export default function AdminLayout() {
           <button onClick={() => setSidebarOpen(true)} className="text-white">
             <Menu className="w-5 h-5" />
           </button>
-          <img src="/dwiptori_logo.jpg" alt="Logo" className="w-7 h-7 rounded-full object-cover" />
+          <img src={logo} alt="Logo" className="w-7 h-7 rounded-full object-cover" />
           <span className="font-display font-bold text-white">Admin Panel</span>
         </div>
         <main className="p-6 lg:p-8 page-enter">

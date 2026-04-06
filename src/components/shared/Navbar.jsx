@@ -1,6 +1,10 @@
+import logo from '../../assets/logo.jpg';
 import { useState } from 'react';
+import logo from '../../assets/logo.jpg';
 import { NavLink, useNavigate } from 'react-router-dom';
+import logo from '../../assets/logo.jpg';
 import { useAuth } from '../../hooks/useAuth';
+import logo from '../../assets/logo.jpg';
 import {
   LayoutDashboard, CreditCard, FileText, User,
   LogOut, Menu, X, Shield, ChevronRight
@@ -9,7 +13,7 @@ import {
 function DwiptoriLogo() {
   return (
     <div className="flex items-center gap-3">
-      <img src="/dwiptori_logo.jpg" alt="Dwiptori Logo" className="w-10 h-10 rounded-full object-cover" />
+      <img src={logo} onError={(e)=>{e.target.style.display="none"}} alt="Dwiptori Logo" className="w-10 h-10 rounded-full object-cover" />
       <div>
         <div className="font-display font-bold text-lg leading-tight text-tide-800">Dwiptori</div>
         <div className="text-xs text-tide-500 font-bengali leading-tight">দ্বীপ তরী</div>
