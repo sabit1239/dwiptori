@@ -30,7 +30,10 @@
   .btn-secondary {
     @apply bg-white hover:bg-slate-50 text-tide-700 font-medium px-5 py-2.5 rounded-xl
            border border-tide-200 transition-all duration-200 active:scale-95
-           flex items-center gap-2 justify-center;
+   .btn-danger {
+  @apply bg-red-500 hover:bg-red-600 text-white font-medium px-5 py-2.5 rounded-xl
+         transition-all duration-200 active:scale-95 flex items-center gap-2 justify-center;
+}        flex items-center gap-2 justify-center;
   }
 
   .btn-danger {
@@ -62,7 +65,10 @@
     @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
            bg-island-100 text-island-700;
   }
-
+.badge-rejected {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+         bg-red-100 text-red-600;
+}
   .badge-rejected {
     @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
            bg-coral-100 text-coral-600;
