@@ -20,6 +20,10 @@ export default function AdminMembers() {
   }, []);
 
   async function toggleRole(member) {
+    if (member.email === "sabitshikder12@gmail.com") {
+      toast.error("Main admin cannot be demoted!");
+      return;
+    }
     const newRole = member.role === 'admin' ? 'member' : 'admin';
     try {
       await updateDoc(doc(db, 'users', member.uid), { role: newRole });
