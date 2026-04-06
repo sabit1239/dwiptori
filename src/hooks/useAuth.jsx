@@ -1,21 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  updateProfile,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
+import { doc, setDoc, getDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const AuthContext = createContext(null);
 
-// ✅ Add admin emails here — these users get admin privileges automatically
 const ADMIN_EMAILS = [
-  'nabilmahamudofficial@gmail.com',
   'sabitshikder12@gmail.com',
-  // Add your own email here
 ];
 
 export function AuthProvider({ children }) {
@@ -43,15 +34,19 @@ export function AuthProvider({ children }) {
     await updateProfile(cred.user, { displayName: name });
     const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
     const userDoc = {
-      uid:       cred.user.uid,
-      name,
-      email,
-      phone,
-      role:      isAdmin ? 'admin' : 'member',
+      uid: cred.user.uid,
+      name, email, phone,
+      role: isAdmin ? 'admin' : 'member',
       totalPaid: 0,
       createdAt: serverTimestamp(),
     };
     await setDoc(doc(db, 'users', cred.user.uid), userDoc);
+    await addDoc(collection(db, 'activityLogs'), {
+      type: 'member_joined',
+      message: `${name} নতুন member হিসেবে যোগ দিয়েছেন`,
+      detail: `Email: ${email} · Phone: ${phone}`,
+      createdAt: serverTimestamp(),
+    });
     setProfile(userDoc);
     return cred;
   }
