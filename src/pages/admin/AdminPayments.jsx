@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc, orderBy, query, increment } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, orderBy, query, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { useAuth } from '../../hooks/useAuth';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Clock, Filter } from 'lucide-react';
@@ -9,7 +8,6 @@ import { CheckCircle, XCircle, Clock, Filter } from 'lucide-react';
 const FILTERS = ['all', 'pending', 'approved', 'rejected'];
 
 export default function AdminPayments() {
-  const { profile } = useAuth();
   const [payments, setPayments] = useState([]);
   const [filter,   setFilter]   = useState('pending');
   const [loading,  setLoading]  = useState(true);
@@ -21,7 +19,7 @@ export default function AdminPayments() {
       const snap = await getDocs(query(collection(db, 'payments'), orderBy('createdAt', 'desc')));
       setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch(e) {
-      toast.error('Load failed');
+      toast.error('Load failed: ' + e.message);
     }
     setLoading(false);
   }
@@ -32,9 +30,17 @@ export default function AdminPayments() {
     setActing(payment.id);
     try {
       await updateDoc(doc(db, 'payments', payment.id), { status: 'approved' });
-      await updateDoc(doc(db, 'users', payment.uid), { totalPaid: increment(Number(payment.amount) || 0) });
+
+      const userSnap = await getDoc(doc(db, 'users', payment.uid));
+      if (userSnap.exists()) {
+        const currentPaid = userSnap.data().totalPaid || 0;
+        await updateDoc(doc(db, 'users', payment.uid), {
+          totalPaid: currentPaid + (Number(payment.amount) || 0)
+        });
+      }
+
       setPayments(ps => ps.map(p => p.id === payment.id ? { ...p, status: 'approved' } : p));
-      toast.success('Approved!');
+      toast.success('✅ Approved!');
     } catch(e) {
       toast.error('Failed: ' + e.message);
     }
@@ -55,8 +61,8 @@ export default function AdminPayments() {
 
   const filtered = filter === 'all' ? payments : payments.filter(p => p.status === filter);
   const counts = {
-    all: payments.length,
-    pending: payments.filter(p => p.status === 'pending').length,
+    all:      payments.length,
+    pending:  payments.filter(p => p.status === 'pending').length,
     approved: payments.filter(p => p.status === 'approved').length,
     rejected: payments.filter(p => p.status === 'rejected').length,
   };
@@ -86,8 +92,8 @@ export default function AdminPayments() {
           <div className="divide-y divide-slate-100">
             {filtered.map(p => (
               <div key={p.id} className="p-5 hover:bg-slate-50">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className="flex-1 grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <div className="text-xs text-slate-400 uppercase">Member</div>
                       <div className="font-semibold text-slate-800">{p.memberName}</div>
@@ -109,7 +115,7 @@ export default function AdminPayments() {
                     </div>
                     <div>
                       <div className="text-xs text-slate-400 uppercase">Date</div>
-                      <div className="text-sm">{p.createdAt?.toDate ? format(p.createdAt.toDate(), 'dd MMM yyyy') : '—'}</div>
+                      <div className="text-sm">{p.createdAt?.toDate ? format(p.createdAt.toDate(), 'dd MMM yyyy, hh:mm a') : '—'}</div>
                     </div>
                     <div>
                       <div className="text-xs text-slate-400 uppercase">Status</div>
@@ -121,12 +127,12 @@ export default function AdminPayments() {
                   {p.status === 'pending' && (
                     <div className="flex gap-2">
                       <button onClick={() => approve(p)} disabled={acting === p.id}
-                        className="btn-success py-2 px-4 text-sm">
+                        className="btn-success py-2 px-4 text-sm flex-1">
                         <CheckCircle className="w-4 h-4" />
                         {acting === p.id ? '...' : 'Approve'}
                       </button>
                       <button onClick={() => reject(p)} disabled={acting === p.id}
-                        className="btn-danger py-2 px-4 text-sm">
+                        className="btn-danger py-2 px-4 text-sm flex-1">
                         <XCircle className="w-4 h-4" />
                         {acting === p.id ? '...' : 'Reject'}
                       </button>
