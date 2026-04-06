@@ -3,12 +3,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
-  projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID",
+  apiKey: "AIzaSyA0vaBeig5CbI30hTKvEJUYR_ryCeJZDsM",
+  authDomain: "dwiptori-real1.firebaseapp.com",
+  projectId: "dwiptori-real1",
+  storageBucket: "dwiptori-real1.firebasestorage.app",
+  messagingSenderId: "971248530806",
+  appId: "1:971248530806:web:763cb7993558bacb1bb657"
 };
 
 const app = initializeApp(firebaseConfig);
