@@ -9,7 +9,7 @@ import { Facebook, Users, Wallet, Shield, ChevronRight, Star, MapPin, Calendar }
 
 const COMMITTEE = [
 
-  { name: 'পদ খালি, role: 'সভাপতি', emoji: '👑' },
+  { name: 'পদ খালি', role: 'সভাপতি', emoji: '👑' },
 
   { name: 'পদ খালি', role: 'সহ-সভাপতি', emoji: '🤝' },
 
