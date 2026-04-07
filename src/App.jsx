@@ -1,19 +1,20 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
-import LoginPage     from './pages/LoginPage';
-import RegisterPage  from './pages/RegisterPage';
-import MemberLayout  from './pages/member/MemberLayout';
-import Dashboard     from './pages/member/Dashboard';
-import PayPage       from './pages/member/PayPage';
-import ReceiptsPage  from './pages/member/ReceiptsPage';
-import ProfilePage   from './pages/member/ProfilePage';
-import AdminLayout   from './pages/admin/AdminLayout';
-import AdminDash     from './pages/admin/AdminDash';
-import AdminPayments from './pages/admin/AdminPayments';
-import AdminMembers  from './pages/admin/AdminMembers';
-import AdminNumbers  from './pages/admin/AdminNumbers';
-import AdminPhotos   from './pages/admin/AdminPhotos';
-import AdminActivity from './pages/admin/AdminActivity';
+import LoginPage      from './pages/LoginPage';
+import RegisterPage   from './pages/RegisterPage';
+import MemberLayout   from './pages/member/MemberLayout';
+import Dashboard      from './pages/member/Dashboard';
+import PayPage        from './pages/member/PayPage';
+import ReceiptsPage   from './pages/member/ReceiptsPage';
+import ProfilePage    from './pages/member/ProfilePage';
+import DirectoryPage  from './pages/member/DirectoryPage';
+import AdminLayout    from './pages/admin/AdminLayout';
+import AdminDash      from './pages/admin/AdminDash';
+import AdminPayments  from './pages/admin/AdminPayments';
+import AdminMembers   from './pages/admin/AdminMembers';
+import AdminNumbers   from './pages/admin/AdminNumbers';
+import AdminPhotos    from './pages/admin/AdminPhotos';
+import AdminActivity  from './pages/admin/AdminActivity';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -35,10 +36,11 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
 
       <Route path="/" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="pay"       element={<PayPage />} />
-        <Route path="receipts"  element={<ReceiptsPage />} />
-        <Route path="profile"   element={<ProfilePage />} />
+        <Route path="dashboard"  element={<Dashboard />} />
+        <Route path="pay"        element={<PayPage />} />
+        <Route path="receipts"   element={<ReceiptsPage />} />
+        <Route path="directory"  element={<DirectoryPage />} />
+        <Route path="profile"    element={<ProfilePage />} />
       </Route>
 
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>

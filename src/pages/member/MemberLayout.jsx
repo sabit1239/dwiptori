@@ -1,12 +1,13 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from '../../components/shared/Navbar';
-import { LayoutDashboard, CreditCard, FileText, User } from 'lucide-react';
+import { LayoutDashboard, CreditCard, FileText, User, Users } from 'lucide-react';
 
 const LINKS = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/pay',       label: 'Submit Payment', icon: CreditCard },
-  { to: '/receipts',  label: 'My Receipts', icon: FileText },
-  { to: '/profile',   label: 'Profile', icon: User },
+  { to: '/dashboard',  label: 'Dashboard',      icon: LayoutDashboard },
+  { to: '/pay',        label: 'Pay',            icon: CreditCard },
+  { to: '/receipts',   label: 'Receipts',       icon: FileText },
+  { to: '/directory',  label: 'Directory',      icon: Users },
+  { to: '/profile',    label: 'Profile',        icon: User },
 ];
 
 export default function MemberLayout() {
