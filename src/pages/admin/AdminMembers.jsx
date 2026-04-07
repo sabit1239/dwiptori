@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import toast from 'react-hot-toast';
 import { Users, Search, Shield, User, Wallet, ChevronUp, ChevronDown } from 'lucide-react';
@@ -20,8 +20,8 @@ export default function AdminMembers() {
   }, []);
 
   async function toggleRole(member) {
-    if (member.email === "sabitshikder12@gmail.com") {
-      toast.error("Main admin cannot be demoted!");
+    if (member.email === 'sabitshikder12@gmail.com') {
+      toast.error('Main admin cannot be demoted!');
       return;
     }
     const newRole = member.role === 'admin' ? 'member' : 'admin';
@@ -48,9 +48,7 @@ export default function AdminMembers() {
     .sort((a, b) => {
       const av = a[sort.field] ?? '';
       const bv = b[sort.field] ?? '';
-      const cmp = typeof av === 'number'
-        ? av - bv
-        : String(av).localeCompare(String(bv));
+      const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
       return sort.dir === 'asc' ? cmp : -cmp;
     });
 
@@ -61,16 +59,15 @@ export default function AdminMembers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold text-slate-800">Members</h1>
-          <p className="text-slate-500 mt-1">{members.length} registered members · ৳{totalFunds.toLocaleString()} total collected</p>
+          <p className="text-slate-500 mt-1">{members.length} জন সদস্য · মোট ৳{totalFunds.toLocaleString()}</p>
         </div>
       </div>
 
-      {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {[
-          { label: 'Total Members', value: members.length, icon: Users, color: 'bg-tide-600' },
-          { label: 'Admins',        value: members.filter(m=>m.role==='admin').length, icon: Shield, color: 'bg-island-600' },
-          { label: 'Total Collected', value: `৳${totalFunds.toLocaleString()}`, icon: Wallet, color: 'bg-sand-500' },
+          { label: 'মোট সদস্য',    value: members.length,                              icon: Users,  color: 'bg-tide-600' },
+          { label: 'Admin',         value: members.filter(m=>m.role==='admin').length,  icon: Shield, color: 'bg-island-600' },
+          { label: 'মোট চাঁদা',    value: `৳${totalFunds.toLocaleString()}`,           icon: Wallet, color: 'bg-yellow-500' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-2xl p-4 shadow-card flex items-center gap-3">
             <div className={`p-2.5 rounded-xl ${color}`}><Icon className="w-4 h-4 text-white" /></div>
@@ -82,30 +79,29 @@ export default function AdminMembers() {
         ))}
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" className="input-field pl-10 bg-white shadow-sm"
-          placeholder="Search by name, email, or phone…"
+          placeholder="নাম, email বা phone দিয়ে খুঁজুন..."
           value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400">Loading members…</div>
+          <div className="p-12 text-center text-slate-400">Loading...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
                 <tr>
                   <th onClick={() => toggleSort('name')} className="cursor-pointer hover:text-slate-800">
-                    Name <SortIcon field="name" />
+                    সদস্য <SortIcon field="name" />
                   </th>
                   <th>Contact</th>
                   <th onClick={() => toggleSort('totalPaid')} className="cursor-pointer hover:text-slate-800">
-                    Contributed <SortIcon field="totalPaid" />
+                    চাঁদা <SortIcon field="totalPaid" />
                   </th>
-                  <th>Joined</th>
+                  <th>যোগদান</th>
                   <th>Role</th>
                   <th>Action</th>
                 </tr>
@@ -114,12 +110,22 @@ export default function AdminMembers() {
                 {filtered.map(m => (
                   <tr key={m.uid || m.id}>
                     <td>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-tide-400 to-tide-600
-                                        flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                          {m.name?.[0]?.toUpperCase()}
+                      <div className="flex items-center gap-3">
+                        {m.photoURL && m.photoStatus === 'approved' ? (
+                          <img src={m.photoURL} alt={m.name}
+                            className="w-10 h-10 rounded-xl object-cover flex-shrink-0 border border-slate-200" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-tide-400 to-tide-600
+                                          flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {m.name?.[0]?.toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium text-slate-800">{m.name}</div>
+                          {m.photoStatus === 'pending' && (
+                            <div className="text-xs text-yellow-600">📷 ফটো pending</div>
+                          )}
                         </div>
-                        <div className="font-medium text-slate-800">{m.name}</div>
                       </div>
                     </td>
                     <td>
@@ -132,8 +138,11 @@ export default function AdminMembers() {
                     </td>
                     <td>
                       <span className={m.role === 'admin'
-                        ? 'badge-approved' : 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600'}>
-                        {m.role === 'admin' ? <><Shield className="w-3 h-3" />Admin</> : <><User className="w-3 h-3" />Member</>}
+                        ? 'badge-approved'
+                        : 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600'}>
+                        {m.role === 'admin'
+                          ? <><Shield className="w-3 h-3" />Admin</>
+                          : <><User className="w-3 h-3" />Member</>}
                       </span>
                     </td>
                     <td>
@@ -148,7 +157,7 @@ export default function AdminMembers() {
               </tbody>
             </table>
             {filtered.length === 0 && (
-              <div className="p-8 text-center text-slate-400">No members match your search</div>
+              <div className="p-8 text-center text-slate-400">কোনো member পাওয়া যায়নি</div>
             )}
           </div>
         )}
