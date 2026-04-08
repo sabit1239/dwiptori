@@ -35,11 +35,8 @@ export default function ForgotPasswordPage() {
       });
       setSent(true);
     } catch (e) {
-      if (e.code === 'auth/user-not-found') {
-        toast.error('এই email এ কোনো account নেই');
-      } else {
-        toast.error('কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন');
-      }
+      console.error('Reset error:', e.code, e.message);
+      toast.error('Error: ' + e.message);
     }
     setLoading(false);
   }
