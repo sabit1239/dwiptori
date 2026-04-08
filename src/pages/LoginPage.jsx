@@ -28,7 +28,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel - branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-tide-700 via-tide-600 to-island-600
                       flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -70,7 +69,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel - form */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md animate-slide-up">
           <div className="lg:hidden flex items-center gap-2 mb-8">
@@ -79,7 +77,7 @@ export default function LoginPage() {
             </div>
             <span className="font-display font-bold text-xl text-tide-800">Dwiptori</span>
           </div>
-          
+
           <h1 className="font-display text-3xl font-bold text-slate-800 mb-1">Sign in</h1>
           <p className="text-slate-500 mb-8">Access your Dwiptori account</p>
 
@@ -94,7 +92,13 @@ export default function LoginPage() {
               </div>
             </div>
             <div>
-              <label className="label">Password</label>
+              <label className="label flex justify-between">
+                <span>Password</span>
+                <Link to="/forgot-password"
+                  className="text-xs text-tide-600 font-medium hover:underline">
+                  Password ভুলে গেছেন?
+                </Link>
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input type={showPwd ? 'text' : 'password'} className="input-field pl-10 pr-10"

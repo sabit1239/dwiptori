@@ -1,20 +1,21 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
-import LoginPage      from './pages/LoginPage';
-import RegisterPage   from './pages/RegisterPage';
-import MemberLayout   from './pages/member/MemberLayout';
-import Dashboard      from './pages/member/Dashboard';
-import PayPage        from './pages/member/PayPage';
-import ReceiptsPage   from './pages/member/ReceiptsPage';
-import ProfilePage    from './pages/member/ProfilePage';
-import DirectoryPage  from './pages/member/DirectoryPage';
-import AdminLayout    from './pages/admin/AdminLayout';
-import AdminDash      from './pages/admin/AdminDash';
-import AdminPayments  from './pages/admin/AdminPayments';
-import AdminMembers   from './pages/admin/AdminMembers';
-import AdminNumbers   from './pages/admin/AdminNumbers';
-import AdminPhotos    from './pages/admin/AdminPhotos';
-import AdminActivity  from './pages/admin/AdminActivity';
+import LoginPage          from './pages/LoginPage';
+import RegisterPage       from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import MemberLayout       from './pages/member/MemberLayout';
+import Dashboard          from './pages/member/Dashboard';
+import PayPage            from './pages/member/PayPage';
+import ReceiptsPage       from './pages/member/ReceiptsPage';
+import ProfilePage        from './pages/member/ProfilePage';
+import DirectoryPage      from './pages/member/DirectoryPage';
+import AdminLayout        from './pages/admin/AdminLayout';
+import AdminDash          from './pages/admin/AdminDash';
+import AdminPayments      from './pages/admin/AdminPayments';
+import AdminMembers       from './pages/admin/AdminMembers';
+import AdminNumbers       from './pages/admin/AdminNumbers';
+import AdminPhotos        from './pages/admin/AdminPhotos';
+import AdminActivity      from './pages/admin/AdminActivity';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -31,9 +32,10 @@ function AdminRoute({ children }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/"         element={<Navigate to="/dashboard" replace />} />
-      <Route path="/login"    element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/"                element={<Navigate to="/dashboard" replace />} />
+      <Route path="/login"           element={<LoginPage />} />
+      <Route path="/register"        element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       <Route path="/" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
         <Route path="dashboard"  element={<Dashboard />} />
