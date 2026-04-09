@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.jpg';
-import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity, Camera } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity, Camera, UserSquare } from 'lucide-react';
 
 const LINKS = [
-  { to: '/admin',          label: 'Overview',      icon: LayoutDashboard, end: true },
-  { to: '/admin/payments', label: 'Payments',      icon: CreditCard },
-  { to: '/admin/members',  label: 'Members',       icon: Users },
-  { to: '/admin/numbers',  label: 'Pay Numbers',   icon: Phone },
-  { to: '/admin/photos',   label: 'Photo Approval',icon: Camera },
-  { to: '/admin/activity', label: 'Activity Log',  icon: Activity },
+  { to: '/admin',           label: 'Overview',      icon: LayoutDashboard, end: true },
+  { to: '/admin/payments',  label: 'Payments',      icon: CreditCard },
+  { to: '/admin/members',   label: 'Members',       icon: Users },
+  { to: '/admin/committee', label: 'Committee',     icon: UserSquare },
+  { to: '/admin/numbers',   label: 'Pay Numbers',   icon: Phone },
+  { to: '/admin/photos',    label: 'Photo Approval',icon: Camera },
+  { to: '/admin/activity',  label: 'Activity Log',  icon: Activity },
 ];
 
 export default function AdminLayout() {
@@ -39,7 +40,7 @@ export default function AdminLayout() {
             </button>
           )}
         </div>
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {LINKS.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end}
               onClick={() => mobile && setSidebarOpen(false)}
