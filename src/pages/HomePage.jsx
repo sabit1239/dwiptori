@@ -2,15 +2,15 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import logo from '../assets/logo.jpg';
-import { Facebook, ChevronRight, Phone, MapPin, Menu, X, Image } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import logo from '../assets/logo.jpg';
+import { Facebook, ChevronRight, Phone, MapPin, Menu, X, Image, LayoutDashboard, LogOut } from 'lucide-react';
 
 export default function HomePage() {
+  const { user, profile, logout } = useAuth();
   const [committee, setCommittee] = useState([]);
   const [gallery,   setGallery]   = useState([]);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const [menuOpen,  setMenuOpen]  = useState(false);
 
   useEffect(() => {
     getDocs(collection(db, 'committee')).then(snap => {
@@ -49,6 +49,7 @@ export default function HomePage() {
               <div className="text-xs text-tide-500 leading-tight">দ্বীপ তরী</div>
             </div>
           </div>
+
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ label, id }) => (
               <button key={id} onClick={() => scrollTo(id)}
@@ -57,18 +58,41 @@ export default function HomePage() {
               </button>
             ))}
           </div>
+
           <div className="hidden md:flex items-center gap-2">
-            <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-tide-700 px-3 py-2 rounded-lg transition-colors">
-              Login
-            </Link>
-            <Link to="/register" className="btn-primary py-2 px-4 text-sm">
-              যোগ দিন <ChevronRight className="w-4 h-4" />
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-tide-400 to-tide-600 flex items-center justify-center text-white text-xs font-bold">
+                    {profile?.name?.[0]?.toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">{profile?.name}</span>
+                </div>
+                <Link to="/dashboard" className="btn-primary py-2 px-4 text-sm">
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </Link>
+                <button onClick={logout}
+                  className="p-2 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-tide-700 px-3 py-2 rounded-lg transition-colors">
+                  Login
+                </Link>
+                <Link to="/register" className="btn-primary py-2 px-4 text-sm">
+                  যোগ দিন <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+            )}
           </div>
+
           <button className="md:hidden p-2 rounded-lg text-slate-600" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
+
         {menuOpen && (
           <div className="md:hidden border-t border-slate-100 px-4 py-3 space-y-1 bg-white animate-fade-in">
             {NAV_LINKS.map(({ label, id }) => (
@@ -77,19 +101,50 @@ export default function HomePage() {
                 {label}
               </button>
             ))}
-            <div className="flex gap-2 pt-2">
-              <Link to="/login" onClick={() => setMenuOpen(false)}
-                className="flex-1 text-center text-sm font-medium text-slate-600 border border-slate-200 py-2 rounded-xl">
-                Login
-              </Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)}
-                className="flex-1 text-center text-sm font-medium bg-tide-600 text-white py-2 rounded-xl">
-                যোগ দিন
-              </Link>
-            </div>
+            {user ? (
+              <div className="pt-2 space-y-2">
+                <Link to="/dashboard" onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full text-sm font-medium bg-tide-600 text-white py-2.5 rounded-xl">
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </Link>
+                <button onClick={() => { logout(); setMenuOpen(false); }}
+                  className="flex items-center justify-center gap-2 w-full text-sm font-medium text-red-500 border border-red-200 py-2.5 rounded-xl">
+                  <LogOut className="w-4 h-4" /> Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2 pt-2">
+                <Link to="/login" onClick={() => setMenuOpen(false)}
+                  className="flex-1 text-center text-sm font-medium text-slate-600 border border-slate-200 py-2 rounded-xl">
+                  Login
+                </Link>
+                <Link to="/register" onClick={() => setMenuOpen(false)}
+                  className="flex-1 text-center text-sm font-medium bg-tide-600 text-white py-2 rounded-xl">
+                  যোগ দিন
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </nav>
+
+      {/* Login হলে Dashboard banner দেখাবে */}
+      {user && (
+        <div className="bg-gradient-to-r from-tide-600 to-tide-700 text-white">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">
+                {profile?.name?.[0]?.toUpperCase()}
+              </div>
+              <span className="text-sm">স্বাগতম, <strong>{profile?.name}</strong>!</span>
+            </div>
+            <Link to="/dashboard"
+              className="flex items-center gap-1.5 bg-white text-tide-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-tide-50 transition-colors">
+              <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard এ যান
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-tide-900 via-tide-800 to-tide-700 text-white">
@@ -111,10 +166,18 @@ export default function HomePage() {
             <span>Kutubdia Students Association, Cox's Bazar</span>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link to="/register"
-              className="flex items-center gap-2 bg-white text-tide-800 font-semibold px-7 py-3 rounded-xl hover:bg-tide-50 transition-all shadow-lg">
-              সদস্য হিসেবে যোগ দিন <ChevronRight className="w-4 h-4" />
-            </Link>
+            {!user && (
+              <Link to="/register"
+                className="flex items-center gap-2 bg-white text-tide-800 font-semibold px-7 py-3 rounded-xl hover:bg-tide-50 transition-all shadow-lg">
+                সদস্য হিসেবে যোগ দিন <ChevronRight className="w-4 h-4" />
+              </Link>
+            )}
+            {user && (
+              <Link to="/dashboard"
+                className="flex items-center gap-2 bg-white text-tide-800 font-semibold px-7 py-3 rounded-xl hover:bg-tide-50 transition-all shadow-lg">
+                <LayoutDashboard className="w-4 h-4" /> Dashboard এ যান
+              </Link>
+            )}
             <a href="https://www.facebook.com/profile.php?id=61578642393037"
               target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-7 py-3 rounded-xl transition-all shadow-lg">
@@ -230,9 +293,9 @@ export default function HomePage() {
         </div>
         <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
           {[
-            { icon: MapPin,   label: 'ঠিকানা',   value: "Kutubdia, Cox's Bazar, Bangladesh" },
-            { icon: Facebook, label: 'Facebook',  value: 'Dwiptori — দ্বীপ তরী', link: 'https://www.facebook.com/profile.php?id=61578642393037' },
-            { icon: Phone,    label: 'যোগাযোগ',  value: 'Facebook এ message করুন' },
+            { icon: MapPin,   label: 'ঠিকানা',  value: "Kutubdia, Cox's Bazar, Bangladesh" },
+            { icon: Facebook, label: 'Facebook', value: 'Dwiptori — দ্বীপ তরী', link: 'https://www.facebook.com/profile.php?id=61578642393037' },
+            { icon: Phone,    label: 'যোগাযোগ', value: 'Facebook এ message করুন' },
           ].map(({ icon: Icon, label, value, link }) => (
             <div key={label} className="glass-card p-6 text-center hover:shadow-glow transition-all">
               <div className="w-12 h-12 rounded-2xl bg-tide-100 flex items-center justify-center mx-auto mb-3">
@@ -250,23 +313,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Join CTA */}
-      <section className="bg-gradient-to-br from-tide-700 to-tide-900 py-16">
-        <div className="max-w-6xl mx-auto px-4 text-center text-white">
-          <h2 className="font-display text-3xl font-bold mb-3">সদস্য হতে চান?</h2>
-          <p className="text-tide-200 mb-8">Dwiptori পরিবারে যোগ দিন</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/register"
-              className="flex items-center justify-center gap-2 bg-white text-tide-800 font-semibold px-8 py-3 rounded-xl hover:bg-tide-50 transition-all">
-              এখনই যোগ দিন <ChevronRight className="w-4 h-4" />
-            </Link>
-            <Link to="/login"
-              className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-3 rounded-xl transition-all border border-white/20">
-              Login করুন
-            </Link>
+      {/* Join CTA — login না থাকলেই দেখাবে */}
+      {!user && (
+        <section className="bg-gradient-to-br from-tide-700 to-tide-900 py-16">
+          <div className="max-w-6xl mx-auto px-4 text-center text-white">
+            <h2 className="font-display text-3xl font-bold mb-3">সদস্য হতে চান?</h2>
+            <p className="text-tide-200 mb-8">Dwiptori পরিবারে যোগ দিন</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/register"
+                className="flex items-center justify-center gap-2 bg-white text-tide-800 font-semibold px-8 py-3 rounded-xl hover:bg-tide-50 transition-all">
+                এখনই যোগ দিন <ChevronRight className="w-4 h-4" />
+              </Link>
+              <Link to="/login"
+                className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-3 rounded-xl transition-all border border-white/20">
+                Login করুন
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="bg-tide-950 text-tide-400 text-center py-6 text-xs">

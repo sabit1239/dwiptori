@@ -19,7 +19,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       toast.error(err.code === 'auth/invalid-credential'
         ? 'Invalid email or password' : err.message);

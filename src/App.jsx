@@ -1,5 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+import { Routes, Route } from 'react-router-dom';
 import HomePage           from './pages/HomePage';
 import LoginPage          from './pages/LoginPage';
 import RegisterPage       from './pages/RegisterPage';
@@ -19,6 +18,8 @@ import AdminGallery       from './pages/admin/AdminGallery';
 import AdminNumbers       from './pages/admin/AdminNumbers';
 import AdminPhotos        from './pages/admin/AdminPhotos';
 import AdminActivity      from './pages/admin/AdminActivity';
+import { useAuth } from './hooks/useAuth';
+import { Navigate } from 'react-router-dom';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -35,30 +36,19 @@ function AdminRoute({ children }) {
 export default function App() {
   return (
     <Routes>
-      {/* Public */}
       <Route path="/"                element={<HomePage />} />
       <Route path="/login"           element={<LoginPage />} />
       <Route path="/register"        element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-      {/* Member — আলাদা path /m/ এর নিচে নেই, সরাসরি */}
-      <Route path="/dashboard" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
-        <Route index element={<Dashboard />} />
-      </Route>
-      <Route path="/pay" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
-        <Route index element={<PayPage />} />
-      </Route>
-      <Route path="/receipts" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
-        <Route index element={<ReceiptsPage />} />
-      </Route>
-      <Route path="/directory" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
-        <Route index element={<DirectoryPage />} />
-      </Route>
-      <Route path="/profile" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
-        <Route index element={<ProfilePage />} />
+      <Route element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
+        <Route path="/dashboard"  element={<Dashboard />} />
+        <Route path="/pay"        element={<PayPage />} />
+        <Route path="/receipts"   element={<ReceiptsPage />} />
+        <Route path="/directory"  element={<DirectoryPage />} />
+        <Route path="/profile"    element={<ProfilePage />} />
       </Route>
 
-      {/* Admin */}
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index             element={<AdminDash />} />
         <Route path="payments"   element={<AdminPayments />} />
