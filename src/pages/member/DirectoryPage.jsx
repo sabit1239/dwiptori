@@ -1,12 +1,27 @@
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { Search, Phone, Mail, Shield, User } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { Search, Phone, Mail, Shield, User, Lock } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 
 export default function DirectoryPage() {
+  const { isAdmin } = useAuth();
   const [members, setMembers] = useState([]);
   const [search,  setSearch]  = useState('');
   const [loading, setLoading] = useState(true);
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-8 h-8 text-red-500" />
+        </div>
+        <h2 className="font-display text-2xl font-bold text-slate-800 mb-2">Access Denied</h2>
+        <p className="text-slate-500">এই পেজটি শুধুমাত্র Admin দের জন্য।</p>
+      </div>
+    );
+  }
 
   useEffect(() => {
     (async () => {
@@ -32,7 +47,6 @@ export default function DirectoryPage() {
         <p className="text-slate-500 mt-1">Dwiptori এর সকল সদস্য</p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4">
         <div className="glass-card p-4 text-center">
           <div className="text-2xl font-display font-bold text-tide-700">{members.length}</div>
@@ -46,7 +60,6 @@ export default function DirectoryPage() {
         </div>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" className="input-field pl-10"
@@ -58,8 +71,6 @@ export default function DirectoryPage() {
         <div className="glass-card p-12 text-center text-slate-400">Loading...</div>
       ) : (
         <div className="space-y-6">
-
-          {/* Admins */}
           {admins.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -67,14 +78,10 @@ export default function DirectoryPage() {
                 <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">পরিচালনা কমিটি</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {admins.map(m => (
-                  <MemberCard key={m.uid || m.id} member={m} isAdmin />
-                ))}
+                {admins.map(m => <MemberCard key={m.uid || m.id} member={m} isAdmin />)}
               </div>
             </div>
           )}
-
-          {/* Members */}
           {regular.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -82,13 +89,10 @@ export default function DirectoryPage() {
                 <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">সদস্যবৃন্দ</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {regular.map(m => (
-                  <MemberCard key={m.uid || m.id} member={m} />
-                ))}
+                {regular.map(m => <MemberCard key={m.uid || m.id} member={m} />)}
               </div>
             </div>
           )}
-
           {filtered.length === 0 && (
             <div className="glass-card p-12 text-center">
               <p className="text-slate-500">কোনো সদস্য পাওয়া যায়নি</p>
