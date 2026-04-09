@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { format } from 'date-fns';
-import { Activity, UserPlus, CheckCircle, XCircle, Settings } from 'lucide-react';
+import { Activity, UserPlus, CheckCircle, XCircle, Settings, Trash2 } from 'lucide-react';
 
 const TYPE_META = {
   member_joined: { icon: UserPlus,    color: 'bg-tide-100 text-tide-700',   label: 'New Member' },
   approved:      { icon: CheckCircle, color: 'bg-green-100 text-green-700', label: 'Approved' },
   rejected:      { icon: XCircle,     color: 'bg-red-100 text-red-600',     label: 'Rejected' },
+  deleted:       { icon: Trash2,      color: 'bg-red-100 text-red-600',     label: 'Deleted' },
   settings:      { icon: Settings,    color: 'bg-slate-100 text-slate-600', label: 'Settings' },
 };
 
@@ -44,7 +45,6 @@ export default function AdminActivity() {
           <div className="p-12 text-center">
             <Activity className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500">এখনো কোনো activity নেই</p>
-            <p className="text-xs text-slate-400 mt-1">নতুন member join করলে বা payment approve/reject করলে এখানে দেখাবে</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">

@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { Users, Search, Shield, User, Wallet, ChevronUp, ChevronDown } from 'lucide-react';
+import { Users, Search, Shield, User, Wallet, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function AdminMembers() {
+  const { profile } = useAuth();
   const [members, setMembers] = useState([]);
   const [search,  setSearch]  = useState('');
   const [loading, setLoading] = useState(true);
   const [sort,    setSort]    = useState({ field: 'name', dir: 'asc' });
+  const [confirm, setConfirm] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -27,9 +30,38 @@ export default function AdminMembers() {
     const newRole = member.role === 'admin' ? 'member' : 'admin';
     try {
       await updateDoc(doc(db, 'users', member.uid), { role: newRole });
+      await addDoc(collection(db, 'activityLogs'), {
+        type: 'settings',
+        message: `${member.name} কে ${newRole === 'admin' ? 'Admin' : 'Member'} করা হয়েছে`,
+        detail: `Email: ${member.email}`,
+        adminName: profile?.name,
+        adminEmail: profile?.email,
+        createdAt: serverTimestamp(),
+      });
       setMembers(ms => ms.map(m => m.uid === member.uid ? { ...m, role: newRole } : m));
       toast.success(`${member.name} is now ${newRole === 'admin' ? 'an Admin' : 'a Member'}`);
     } catch { toast.error('Failed to update role'); }
+  }
+
+  async function deleteUser(member) {
+    if (member.email === 'sabitshikder12@gmail.com') {
+      toast.error('Main admin cannot be deleted!');
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, 'users', member.uid));
+      await addDoc(collection(db, 'activityLogs'), {
+        type: 'deleted',
+        message: `${member.name} এর account delete করা হয়েছে`,
+        detail: `Email: ${member.email} · Phone: ${member.phone || '—'}`,
+        adminName: profile?.name,
+        adminEmail: profile?.email,
+        createdAt: serverTimestamp(),
+      });
+      setMembers(ms => ms.filter(m => m.uid !== member.uid));
+      toast.success(`${member.name} এর account delete হয়েছে`);
+      setConfirm(null);
+    } catch { toast.error('Delete failed'); }
   }
 
   function toggleSort(field) {
@@ -56,18 +88,41 @@ export default function AdminMembers() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-slate-800">Members</h1>
-          <p className="text-slate-500 mt-1">{members.length} জন সদস্য · মোট ৳{totalFunds.toLocaleString()}</p>
+
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6 text-red-500" />
+            </div>
+            <h3 className="font-display text-lg font-bold text-slate-800 text-center mb-1">
+              Account Delete করবেন?
+            </h3>
+            <p className="text-slate-500 text-sm text-center mb-6">
+              <span className="font-medium text-slate-700">{confirm.name}</span> এর account permanently delete হবে।
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirm(null)} className="btn-secondary flex-1 justify-center py-2">
+                Cancel
+              </button>
+              <button onClick={() => deleteUser(confirm)} className="btn-danger flex-1 justify-center py-2">
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            </div>
+          </div>
         </div>
+      )}
+
+      <div>
+        <h1 className="font-display text-3xl font-bold text-slate-800">Members</h1>
+        <p className="text-slate-500 mt-1">{members.length} জন সদস্য · মোট ৳{totalFunds.toLocaleString()}</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {[
-          { label: 'মোট সদস্য',    value: members.length,                              icon: Users,  color: 'bg-tide-600' },
-          { label: 'Admin',         value: members.filter(m=>m.role==='admin').length,  icon: Shield, color: 'bg-island-600' },
-          { label: 'মোট চাঁদা',    value: `৳${totalFunds.toLocaleString()}`,           icon: Wallet, color: 'bg-yellow-500' },
+          { label: 'মোট সদস্য', value: members.length,                             icon: Users,  color: 'bg-tide-600' },
+          { label: 'Admin',      value: members.filter(m=>m.role==='admin').length, icon: Shield, color: 'bg-island-600' },
+          { label: 'মোট চাঁদা', value: `৳${totalFunds.toLocaleString()}`,          icon: Wallet, color: 'bg-yellow-500' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-2xl p-4 shadow-card flex items-center gap-3">
             <div className={`p-2.5 rounded-xl ${color}`}><Icon className="w-4 h-4 text-white" /></div>
@@ -146,11 +201,19 @@ export default function AdminMembers() {
                       </span>
                     </td>
                     <td>
-                      <button onClick={() => toggleRole(m)}
-                        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200
-                                   hover:bg-slate-50 text-slate-600 transition-colors">
-                        {m.role === 'admin' ? 'Demote' : 'Make Admin'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => toggleRole(m)}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200
+                                     hover:bg-slate-50 text-slate-600 transition-colors">
+                          {m.role === 'admin' ? 'Demote' : 'Make Admin'}
+                        </button>
+                        {m.email !== 'sabitshikder12@gmail.com' && (
+                          <button onClick={() => setConfirm(m)}
+                            className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
