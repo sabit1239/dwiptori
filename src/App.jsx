@@ -35,22 +35,30 @@ function AdminRoute({ children }) {
 export default function App() {
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public */}
       <Route path="/"                element={<HomePage />} />
       <Route path="/login"           element={<LoginPage />} />
       <Route path="/register"        element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-      {/* Member routes */}
-      <Route path="/" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
-        <Route path="dashboard"  element={<Dashboard />} />
-        <Route path="pay"        element={<PayPage />} />
-        <Route path="receipts"   element={<ReceiptsPage />} />
-        <Route path="directory"  element={<DirectoryPage />} />
-        <Route path="profile"    element={<ProfilePage />} />
+      {/* Member — আলাদা path /m/ এর নিচে নেই, সরাসরি */}
+      <Route path="/dashboard" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
+        <Route index element={<Dashboard />} />
+      </Route>
+      <Route path="/pay" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
+        <Route index element={<PayPage />} />
+      </Route>
+      <Route path="/receipts" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
+        <Route index element={<ReceiptsPage />} />
+      </Route>
+      <Route path="/directory" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
+        <Route index element={<DirectoryPage />} />
+      </Route>
+      <Route path="/profile" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
+        <Route index element={<ProfilePage />} />
       </Route>
 
-      {/* Admin routes */}
+      {/* Admin */}
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index             element={<AdminDash />} />
         <Route path="payments"   element={<AdminPayments />} />
