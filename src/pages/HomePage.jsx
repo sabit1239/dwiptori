@@ -4,11 +4,13 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import logo from '../assets/logo.jpg';
 import { Facebook, ChevronRight, Phone, MapPin, Menu, X, Image } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 export default function HomePage() {
   const [committee, setCommittee] = useState([]);
   const [gallery,   setGallery]   = useState([]);
-  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     getDocs(collection(db, 'committee')).then(snap => {

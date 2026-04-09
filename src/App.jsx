@@ -35,11 +35,13 @@ function AdminRoute({ children }) {
 export default function App() {
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/"                element={<HomePage />} />
       <Route path="/login"           element={<LoginPage />} />
       <Route path="/register"        element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
+      {/* Member routes */}
       <Route path="/" element={<PrivateRoute><MemberLayout /></PrivateRoute>}>
         <Route path="dashboard"  element={<Dashboard />} />
         <Route path="pay"        element={<PayPage />} />
@@ -48,6 +50,7 @@ export default function App() {
         <Route path="profile"    element={<ProfilePage />} />
       </Route>
 
+      {/* Admin routes */}
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index             element={<AdminDash />} />
         <Route path="payments"   element={<AdminPayments />} />
