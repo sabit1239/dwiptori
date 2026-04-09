@@ -3,26 +3,21 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import logo from '../assets/logo.jpg';
-import { Facebook, ChevronRight, Mail, Phone, MapPin, Menu, X } from 'lucide-react';
-
-const GALLERY = [
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80',
-  'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=600&q=80',
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80',
-  'https://images.unsplash.com/photo-1473186578172-c141e6798cf4?w=600&q=80',
-  'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=80',
-  'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&q=80',
-];
+import { Facebook, ChevronRight, Phone, MapPin, Menu, X, Image } from 'lucide-react';
 
 export default function HomePage() {
   const [committee, setCommittee] = useState([]);
+  const [gallery,   setGallery]   = useState([]);
   const [menuOpen,  setMenuOpen]  = useState(false);
 
   useEffect(() => {
     getDocs(collection(db, 'committee')).then(snap => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
-      setCommittee(data);
+      setCommittee(snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.order || 0) - (b.order || 0)));
+    });
+    getDocs(collection(db, 'gallery')).then(snap => {
+      setGallery(snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
     });
   }, []);
 
@@ -32,11 +27,11 @@ export default function HomePage() {
   }
 
   const NAV_LINKS = [
-    { label: 'Home',        id: 'hero' },
+    { label: 'Home',            id: 'hero' },
     { label: 'আমাদের সম্পর্কে', id: 'about' },
-    { label: 'কমিটি',       id: 'committee' },
-    { label: 'Gallery',     id: 'gallery' },
-    { label: 'Contact',     id: 'contact' },
+    { label: 'কমিটি',           id: 'committee' },
+    { label: 'Gallery',         id: 'gallery' },
+    { label: 'Contact',         id: 'contact' },
   ];
 
   return (
@@ -52,8 +47,6 @@ export default function HomePage() {
               <div className="text-xs text-tide-500 leading-tight">দ্বীপ তরী</div>
             </div>
           </div>
-
-          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ label, id }) => (
               <button key={id} onClick={() => scrollTo(id)}
@@ -62,7 +55,6 @@ export default function HomePage() {
               </button>
             ))}
           </div>
-
           <div className="hidden md:flex items-center gap-2">
             <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-tide-700 px-3 py-2 rounded-lg transition-colors">
               Login
@@ -71,13 +63,10 @@ export default function HomePage() {
               যোগ দিন <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-
           <button className="md:hidden p-2 rounded-lg text-slate-600" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
-
-        {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden border-t border-slate-100 px-4 py-3 space-y-1 bg-white animate-fade-in">
             {NAV_LINKS.map(({ label, id }) => (
@@ -105,25 +94,16 @@ export default function HomePage() {
         <div className="absolute inset-0 opacity-10">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="absolute rounded-full border border-white"
-              style={{
-                width: `${(i+1)*200}px`, height: `${(i+1)*200}px`,
-                top: '50%', left: '50%',
-                transform: 'translate(-50%,-50%)',
-              }} />
+              style={{ width: `${(i+1)*200}px`, height: `${(i+1)*200}px`, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
           ))}
         </div>
         <div className="relative z-10 max-w-6xl mx-auto px-4 py-24 text-center">
           <div className="flex justify-center mb-8">
-            <div className="relative">
-              <img src={logo} alt="Dwiptori Logo"
-                className="w-32 h-32 rounded-full object-cover border-4 border-white/30 shadow-2xl" />
-            </div>
+            <img src={logo} alt="Logo" className="w-32 h-32 rounded-full object-cover border-4 border-white/30 shadow-2xl" />
           </div>
           <h1 className="font-display text-5xl sm:text-6xl font-bold mb-3">দ্বীপ তরী</h1>
           <p className="text-tide-200 text-xl mb-3">Dwiptori</p>
-          <p className="text-white/80 text-lg max-w-lg mx-auto mb-4">
-            দ্বীপের বুকে প্রদীপ্ত তারুণ্য
-          </p>
+          <p className="text-white/80 text-lg max-w-lg mx-auto mb-4">দ্বীপের বুকে প্রদীপ্ত তারুণ্য</p>
           <div className="flex items-center justify-center gap-2 text-tide-300 text-sm mb-10">
             <MapPin className="w-4 h-4" />
             <span>Kutubdia Students Association, Cox's Bazar</span>
@@ -159,8 +139,8 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
-            { emoji: '🎓', title: 'শিক্ষা', desc: 'শিক্ষার্থীদের পারস্পরিক সহযোগিতা ও উন্নয়নে কাজ করা' },
-            { emoji: '🤝', title: 'সংহতি', desc: 'দ্বীপের তরুণদের একত্রিত করে শক্তিশালী সম্প্রদায় গড়া' },
+            { emoji: '🎓', title: 'শিক্ষা',   desc: 'শিক্ষার্থীদের পারস্পরিক সহযোগিতা ও উন্নয়নে কাজ করা' },
+            { emoji: '🤝', title: 'সংহতি',   desc: 'দ্বীপের তরুণদের একত্রিত করে শক্তিশালী সম্প্রদায় গড়া' },
             { emoji: '🌊', title: 'উন্নয়ন', desc: 'সমাজ ও সংস্কৃতির উন্নয়নে নিরলস প্রচেষ্টা চালিয়ে যাওয়া' },
           ].map(({ emoji, title, desc }) => (
             <div key={title} className="glass-card p-6 text-center hover:shadow-glow transition-all">
@@ -209,14 +189,21 @@ export default function HomePage() {
           <div className="w-16 h-1 bg-tide-600 rounded-full mx-auto mb-6"></div>
           <p className="text-slate-500">আমাদের কার্যক্রমের কিছু মুহূর্ত</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {GALLERY.map((src, i) => (
-            <div key={i} className="aspect-square rounded-2xl overflow-hidden shadow-card hover:shadow-glow transition-all">
-              <img src={src} alt={`Gallery ${i+1}`}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-            </div>
-          ))}
-        </div>
+        {gallery.length === 0 ? (
+          <div className="text-center py-12">
+            <Image className="w-12 h-12 text-slate-200 mx-auto mb-3" />
+            <p className="text-slate-400">শীঘ্রই ছবি আসছে...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {gallery.map(p => (
+              <div key={p.id} className="aspect-square rounded-2xl overflow-hidden shadow-card hover:shadow-glow transition-all">
+                <img src={p.url} alt="Gallery"
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Facebook */}
@@ -241,10 +228,9 @@ export default function HomePage() {
         </div>
         <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
           {[
-            { icon: MapPin, label: 'ঠিকানা',   value: 'Kutubdia, Cox\'s Bazar, Bangladesh' },
-            { icon: Facebook, label: 'Facebook', value: 'Dwiptori — দ্বীপ তরী',
-              link: 'https://www.facebook.com/profile.php?id=61578642393037' },
-            { icon: Mail,   label: 'Email',     value: 'dwiptori@gmail.com' },
+            { icon: MapPin,   label: 'ঠিকানা',   value: "Kutubdia, Cox's Bazar, Bangladesh" },
+            { icon: Facebook, label: 'Facebook',  value: 'Dwiptori — দ্বীপ তরী', link: 'https://www.facebook.com/profile.php?id=61578642393037' },
+            { icon: Phone,    label: 'যোগাযোগ',  value: 'Facebook এ message করুন' },
           ].map(({ icon: Icon, label, value, link }) => (
             <div key={label} className="glass-card p-6 text-center hover:shadow-glow transition-all">
               <div className="w-12 h-12 rounded-2xl bg-tide-100 flex items-center justify-center mx-auto mb-3">

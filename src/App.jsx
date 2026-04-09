@@ -15,6 +15,7 @@ import AdminDash          from './pages/admin/AdminDash';
 import AdminPayments      from './pages/admin/AdminPayments';
 import AdminMembers       from './pages/admin/AdminMembers';
 import AdminCommittee     from './pages/admin/AdminCommittee';
+import AdminGallery       from './pages/admin/AdminGallery';
 import AdminNumbers       from './pages/admin/AdminNumbers';
 import AdminPhotos        from './pages/admin/AdminPhotos';
 import AdminActivity      from './pages/admin/AdminActivity';
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="payments"   element={<AdminPayments />} />
         <Route path="members"    element={<AdminMembers />} />
         <Route path="committee"  element={<AdminCommittee />} />
+        <Route path="gallery"    element={<AdminGallery />} />
         <Route path="numbers"    element={<AdminNumbers />} />
         <Route path="photos"     element={<AdminPhotos />} />
         <Route path="activity"   element={<AdminActivity />} />
