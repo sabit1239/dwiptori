@@ -11,6 +11,7 @@ import ReceiptsPage       from './pages/member/ReceiptsPage';
 import ProfilePage        from './pages/member/ProfilePage';
 import DirectoryPage      from './pages/member/DirectoryPage';
 import LedgerPage         from './pages/member/LedgerPage';
+import NoticePage         from './pages/member/NoticePage';
 import AdminLayout        from './pages/admin/AdminLayout';
 import AdminDash          from './pages/admin/AdminDash';
 import AdminPayments      from './pages/admin/AdminPayments';
@@ -21,6 +22,7 @@ import AdminNumbers       from './pages/admin/AdminNumbers';
 import AdminPhotos        from './pages/admin/AdminPhotos';
 import AdminActivity      from './pages/admin/AdminActivity';
 import AdminLedger        from './pages/admin/AdminLedger';
+import AdminNotices       from './pages/admin/AdminNotices';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -48,6 +50,7 @@ export default function App() {
         <Route path="/receipts"   element={<ReceiptsPage />} />
         <Route path="/directory"  element={<DirectoryPage />} />
         <Route path="/ledger"     element={<LedgerPage />} />
+        <Route path="/notices"    element={<NoticePage />} />
         <Route path="/profile"    element={<ProfilePage />} />
       </Route>
 
@@ -58,6 +61,7 @@ export default function App() {
         <Route path="committee"  element={<AdminCommittee />} />
         <Route path="gallery"    element={<AdminGallery />} />
         <Route path="ledger"     element={<AdminLedger />} />
+        <Route path="notices"    element={<AdminNotices />} />
         <Route path="numbers"    element={<AdminNumbers />} />
         <Route path="photos"     element={<AdminPhotos />} />
         <Route path="activity"   element={<AdminActivity />} />

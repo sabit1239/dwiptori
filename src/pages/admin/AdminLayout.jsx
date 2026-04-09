@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.jpg';
-import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity, Camera, UserSquare, Image, BookOpen } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity, Camera, UserSquare, Image, BookOpen, Bell } from 'lucide-react';
 
 const LINKS = [
   { to: '/admin',           label: 'Overview',       icon: LayoutDashboard, end: true },
   { to: '/admin/payments',  label: 'Payments',       icon: CreditCard },
   { to: '/admin/members',   label: 'Members',        icon: Users },
   { to: '/admin/committee', label: 'Committee',      icon: UserSquare },
+  { to: '/admin/notices',   label: 'Notice Board',   icon: Bell },
   { to: '/admin/ledger',    label: 'হিসাবের খাতা',  icon: BookOpen },
   { to: '/admin/gallery',   label: 'Gallery',        icon: Image },
   { to: '/admin/numbers',   label: 'Pay Numbers',    icon: Phone },
