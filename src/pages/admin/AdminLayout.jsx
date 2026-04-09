@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.jpg';
-import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity, Camera, UserSquare, Image } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity, Camera, UserSquare, Image, BookOpen } from 'lucide-react';
 
 const LINKS = [
   { to: '/admin',           label: 'Overview',       icon: LayoutDashboard, end: true },
   { to: '/admin/payments',  label: 'Payments',       icon: CreditCard },
   { to: '/admin/members',   label: 'Members',        icon: Users },
   { to: '/admin/committee', label: 'Committee',      icon: UserSquare },
+  { to: '/admin/ledger',    label: 'হিসাবের খাতা',  icon: BookOpen },
   { to: '/admin/gallery',   label: 'Gallery',        icon: Image },
   { to: '/admin/numbers',   label: 'Pay Numbers',    icon: Phone },
   { to: '/admin/photos',    label: 'Photo Approval', icon: Camera },
@@ -54,9 +55,9 @@ export default function AdminLayout() {
           ))}
         </nav>
         <div className="px-4 pb-6 border-t border-white/10 pt-4 space-y-2">
-          <NavLink to="/dashboard"
+          <NavLink to="/"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-tide-300 hover:bg-white/10 hover:text-white transition-all">
-            <Home className="w-4 h-4" /> Member View
+            <Home className="w-4 h-4" /> Home Page
           </NavLink>
           <div className="flex items-center gap-3 px-3 py-2 mt-2">
             <div className="w-8 h-8 rounded-full bg-tide-600 flex items-center justify-center text-white text-sm font-bold">
