@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc, orderBy, query, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, orderBy, query, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useAuth } from '../../hooks/useAuth';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Clock, Filter } from 'lucide-react';
 
 const FILTERS = ['all', 'pending', 'approved', 'rejected'];
+const MONTHS = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
 
 export default function AdminPayments() {
+  const { profile } = useAuth();
   const [payments, setPayments] = useState([]);
   const [filter,   setFilter]   = useState('pending');
   const [loading,  setLoading]  = useState(true);
@@ -29,8 +32,10 @@ export default function AdminPayments() {
   async function approve(payment) {
     setActing(payment.id);
     try {
+      // Payment approve
       await updateDoc(doc(db, 'payments', payment.id), { status: 'approved' });
 
+      // Member totalPaid update
       const userSnap = await getDoc(doc(db, 'users', payment.uid));
       if (userSnap.exists()) {
         const currentPaid = userSnap.data().totalPaid || 0;
@@ -39,8 +44,31 @@ export default function AdminPayments() {
         });
       }
 
+      // Ledger এ automatically income entry যোগ
+      const now = new Date();
+      await addDoc(collection(db, 'ledger'), {
+        type:        'income',
+        amount:      Number(payment.amount) || 0,
+        description: `${payment.memberName} এর মাসিক চাঁদা (TrxID: ${payment.trxId})`,
+        month:       MONTHS[now.getMonth()],
+        year:        now.getFullYear(),
+        addedBy:     profile?.name,
+        paymentId:   payment.id,
+        createdAt:   serverTimestamp(),
+      });
+
+      // Activity log
+      await addDoc(collection(db, 'activityLogs'), {
+        type:       'approved',
+        message:    `${payment.memberName} এর payment approve করা হয়েছে`,
+        detail:     `TrxID: ${payment.trxId} · Amount: ৳${payment.amount}`,
+        adminName:  profile?.name,
+        adminEmail: profile?.email,
+        createdAt:  serverTimestamp(),
+      });
+
       setPayments(ps => ps.map(p => p.id === payment.id ? { ...p, status: 'approved' } : p));
-      toast.success('✅ Approved!');
+      toast.success('✅ Approved! হিসাবে যোগ হয়েছে।');
     } catch(e) {
       toast.error('Failed: ' + e.message);
     }
@@ -51,6 +79,16 @@ export default function AdminPayments() {
     setActing(payment.id);
     try {
       await updateDoc(doc(db, 'payments', payment.id), { status: 'rejected' });
+
+      await addDoc(collection(db, 'activityLogs'), {
+        type:       'rejected',
+        message:    `${payment.memberName} এর payment reject করা হয়েছে`,
+        detail:     `TrxID: ${payment.trxId} · Amount: ৳${payment.amount}`,
+        adminName:  profile?.name,
+        adminEmail: profile?.email,
+        createdAt:  serverTimestamp(),
+      });
+
       setPayments(ps => ps.map(p => p.id === payment.id ? { ...p, status: 'rejected' } : p));
       toast.success('Rejected!');
     } catch(e) {
@@ -71,8 +109,9 @@ export default function AdminPayments() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="font-display text-3xl font-bold text-slate-800">Payment Verification</h1>
-        <p className="text-slate-500 mt-1">Member payment approve ও reject করুন</p>
+        <p className="text-slate-500 mt-1">Approve করলে হিসাবের খাতায় automatically যোগ হবে</p>
       </div>
+
       <div className="flex items-center gap-2 flex-wrap">
         <Filter className="w-4 h-4 text-slate-400" />
         {FILTERS.map(f => (
@@ -83,6 +122,7 @@ export default function AdminPayments() {
           </button>
         ))}
       </div>
+
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-400">Loading...</div>
