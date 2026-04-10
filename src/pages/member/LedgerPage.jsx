@@ -3,8 +3,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { format } from 'date-fns';
 import { TrendingUp, TrendingDown, Wallet, Download } from 'lucide-react';
-
-const MONTHS = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function LedgerPage() {
   const [entries, setEntries] = useState([]);
@@ -32,6 +31,16 @@ export default function LedgerPage() {
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(e);
   });
+
+  // Chart data
+  const allGrouped = {};
+  entries.forEach(e => {
+    const key = `${e.month?.slice(0,3)} ${e.year}`;
+    if (!allGrouped[key]) allGrouped[key] = { name: key, আয়: 0, ব্যয়: 0 };
+    if (e.type === 'income')  allGrouped[key]['আয়']  += e.amount;
+    if (e.type === 'expense') allGrouped[key]['ব্যয়'] += e.amount;
+  });
+  const chartData = Object.values(allGrouped).reverse();
 
   function downloadCSV(monthEntries, monthLabel) {
     const rows = [
@@ -99,6 +108,27 @@ export default function LedgerPage() {
           </div>
         </div>
       </div>
+
+      {/* Chart */}
+      {chartData.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-card p-5">
+          <h2 className="font-semibold text-slate-800 mb-4">মাসওয়ারি আয় ও ব্যয়</h2>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip
+                formatter={(value) => [`৳${value.toLocaleString()}`, '']}
+                contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+              />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Bar dataKey="আয়"  fill="#22c55e" radius={[6,6,0,0]} />
+              <Bar dataKey="ব্যয়" fill="#ef4444" radius={[6,6,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Filter */}
       <div className="flex gap-2">
