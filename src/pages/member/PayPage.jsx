@@ -1,75 +1,47 @@
-import { useState, useEffect } from 'react';
-import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, addDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { Phone, Hash, DollarSign, User, Copy, CheckCircle, Send } from 'lucide-react';
-
-function NumberCard({ method, number, color }) {
-  const [copied, setCopied] = useState(false);
-  function copy() {
-    navigator.clipboard.writeText(number);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-  return (
-    <div className={`rounded-2xl p-4 border-2 ${color}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-wider opacity-70">{method}</div>
-          <div className="text-xl font-mono font-bold mt-0.5">{number}</div>
-          <div className="text-xs opacity-60 mt-1">Send money to this number, then fill the form below</div>
-        </div>
-        <button onClick={copy}
-          className="p-2 rounded-xl bg-white/50 hover:bg-white/80 transition-colors">
-          {copied
-            ? <CheckCircle className="w-4 h-4 text-green-600" />
-            : <Copy className="w-4 h-4" />}
-        </button>
-      </div>
-    </div>
-  );
-}
+import { CreditCard, Copy, CheckCircle, AlertCircle, Send } from 'lucide-react';
 
 export default function PayPage() {
   const { profile } = useAuth();
-  const [payNumbers, setPayNumbers] = useState([]);
+  const [numbers,  setNumbers]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [copied,   setCopied]   = useState('');
   const [form, setForm] = useState({
-    senderName: profile?.name || '',
-    senderPhone: '',
-    trxId: '',
-    amount: '',
-    method: 'bKash',
+    senderName: '', senderPhone: '', trxId: '', amount: '', method: 'bKash',
   });
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const snap = await getDocs(collection(db, 'paymentNumbers'));
-      setPayNumbers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    })();
+    getDocs(collection(db, 'paymentNumbers')).then(snap => {
+      setNumbers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    });
   }, []);
 
-  function update(field) { return e => setForm(f => ({ ...f, [field]: e.target.value })); }
+  function copyNumber(num) {
+    navigator.clipboard.writeText(num);
+    setCopied(num);
+    toast.success('Number copied!');
+    setTimeout(() => setCopied(''), 2000);
+  }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const { senderName, senderPhone, trxId, amount } = form;
-    if (!senderName || !senderPhone || !trxId || !amount)
-      return toast.error('Please fill all fields');
-    if (isNaN(amount) || Number(amount) <= 0)
-      return toast.error('Please enter a valid amount');
-    if (!/^\d{10,11}$/.test(senderPhone.replace(/\D/g,'')))
-      return toast.error('Please enter a valid phone number');
+  async function handleSubmit() {
+    if (!form.senderName.trim()) return toast.error('Sender নাম দিন');
+    if (!form.senderPhone.trim()) return toast.error('Sender phone দিন');
+    if (!form.trxId.trim()) return toast.error('TrxID দিন');
+    if (!form.amount || isNaN(form.amount)) return toast.error('সঠিক amount দিন');
 
-    setLoading(true);
+    setSubmitting(true);
     try {
-      // Check for duplicate TrxID
-      const dupQ = query(collection(db, 'payments'), where('trxId', '==', trxId.trim()));
-      const dupSnap = await getDocs(dupQ);
+      // Duplicate TrxID check
+      const dupSnap = await getDocs(query(collection(db, 'payments'), where('trxId', '==', form.trxId.trim())));
       if (!dupSnap.empty) {
-        toast.error('This Transaction ID has already been submitted!');
-        setLoading(false);
+        toast.error('এই TrxID আগেই submit হয়েছে!');
+        setSubmitting(false);
         return;
       }
 
@@ -77,131 +49,150 @@ export default function PayPage() {
         uid:         profile.uid,
         memberName:  profile.name,
         memberEmail: profile.email,
-        senderName:  senderName.trim(),
-        senderPhone: senderPhone.trim(),
-        trxId:       trxId.trim(),
-        amount:      Number(amount),
+        senderName:  form.senderName.trim(),
+        senderPhone: form.senderPhone.trim(),
+        trxId:       form.trxId.trim(),
+        amount:      Number(form.amount),
         method:      form.method,
         status:      'pending',
         createdAt:   serverTimestamp(),
       });
 
-      toast.success('Payment submitted! Waiting for admin approval.');
-      setForm(f => ({ ...f, senderPhone:'', trxId:'', amount:'' }));
-    } catch (err) {
-      toast.error('Failed to submit. Please try again.');
-    } finally { setLoading(false); }
+      toast.success('Payment submit হয়েছে! Admin approval এর অপেক্ষায়।');
+      setForm({ senderName: '', senderPhone: '', trxId: '', amount: '', method: 'bKash' });
+    } catch(e) {
+      toast.error('Failed: ' + e.message);
+    }
+    setSubmitting(false);
   }
 
-  const bkashNums  = payNumbers.filter(n => n.method === 'bKash');
-  const nagadNums  = payNumbers.filter(n => n.method === 'Nagad');
+  const bkash  = numbers.filter(n => n.type === 'bKash');
+  const nagad  = numbers.filter(n => n.type === 'Nagad');
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-fade-in">
+    <div className="max-w-lg mx-auto space-y-5 animate-fade-in">
       <div>
-        <h1 className="font-display text-3xl font-bold text-slate-800">Submit Payment</h1>
-        <p className="text-slate-500 mt-1">Send money first, then fill in the details below</p>
+        <h1 className="font-display text-3xl font-bold text-slate-800">চাঁদা জমা দিন</h1>
+        <p className="text-slate-500 mt-1">নিচের নম্বরে টাকা পাঠিয়ে form fill করুন</p>
       </div>
 
-      {/* Step 1 - Payment numbers */}
-      <div className="glass-card p-6 space-y-4">
+      {/* Step 1 — Numbers */}
+      <div className="glass-card p-5">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-full bg-tide-600 text-white text-sm font-bold flex items-center justify-center">1</div>
-          <h2 className="font-semibold text-slate-800">Send money to one of these numbers</h2>
+          <div className="w-7 h-7 rounded-full bg-tide-600 text-white text-sm font-bold flex items-center justify-center">১</div>
+          <h2 className="font-semibold text-slate-800">নম্বরে টাকা পাঠান</h2>
         </div>
 
-        {bkashNums.length > 0 && (
-          <div className="space-y-2">
-            {bkashNums.map(n => (
-              <NumberCard key={n.id} method="bKash" number={n.number}
-                color="border-pink-200 bg-pink-50 text-pink-900" />
-            ))}
+        {loading ? (
+          <div className="text-center text-slate-400 py-4">Loading...</div>
+        ) : numbers.length === 0 ? (
+          <div className="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-xl p-3">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm">Admin এখনো payment number যোগ করেননি</span>
           </div>
-        )}
-        {nagadNums.length > 0 && (
-          <div className="space-y-2">
-            {nagadNums.map(n => (
-              <NumberCard key={n.id} method="Nagad" number={n.number}
-                color="border-orange-200 bg-orange-50 text-orange-900" />
-            ))}
-          </div>
-        )}
-        {payNumbers.length === 0 && (
-          <div className="text-center py-4 text-slate-400 text-sm">
-            No payment numbers configured yet. Contact admin.
+        ) : (
+          <div className="space-y-3">
+            {bkash.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">bKash</div>
+                {bkash.map(n => (
+                  <div key={n.id} className="flex items-center justify-between bg-pink-50 border border-pink-100 rounded-xl px-4 py-3">
+                    <div>
+                      <div className="font-mono font-bold text-slate-800">{n.number}</div>
+                      {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
+                    </div>
+                    <button onClick={() => copyNumber(n.number)}
+                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all
+                        ${copied === n.number ? 'bg-green-100 text-green-700' : 'bg-white text-pink-600 hover:bg-pink-100 border border-pink-200'}`}>
+                      {copied === n.number ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied === n.number ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {nagad.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Nagad</div>
+                {nagad.map(n => (
+                  <div key={n.id} className="flex items-center justify-between bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
+                    <div>
+                      <div className="font-mono font-bold text-slate-800">{n.number}</div>
+                      {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
+                    </div>
+                    <button onClick={() => copyNumber(n.number)}
+                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all
+                        ${copied === n.number ? 'bg-green-100 text-green-700' : 'bg-white text-orange-600 hover:bg-orange-100 border border-orange-200'}`}>
+                      {copied === n.number ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied === n.number ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Step 2 - Form */}
-      <div className="glass-card p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="w-7 h-7 rounded-full bg-tide-600 text-white text-sm font-bold flex items-center justify-center">2</div>
-          <h2 className="font-semibold text-slate-800">Fill in the payment details</h2>
+      {/* Step 2 — Form */}
+      <div className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-7 h-7 rounded-full bg-tide-600 text-white text-sm font-bold flex items-center justify-center">২</div>
+          <h2 className="font-semibold text-slate-800">Payment তথ্য দিন</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Sender's Name</label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="text" className="input-field pl-10"
-                  placeholder="Your full name" value={form.senderName}
-                  onChange={update('senderName')} />
-              </div>
-            </div>
-            <div>
-              <label className="label">Sender's Mobile Number</label>
-              <div className="relative">
-                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="tel" className="input-field pl-10"
-                  placeholder="01XXXXXXXXX" value={form.senderPhone}
-                  onChange={update('senderPhone')} />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Transaction ID (TrxID)</label>
-              <div className="relative">
-                <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="text" className="input-field pl-10 font-mono"
-                  placeholder="e.g. 8J9K3MNP2Q" value={form.trxId}
-                  onChange={update('trxId')} />
-              </div>
-            </div>
-            <div>
-              <label className="label">Amount Sent (BDT)</label>
-              <div className="relative">
-                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="number" className="input-field pl-10"
-                  placeholder="e.g. 500" value={form.amount}
-                  onChange={update('amount')} min="1" />
-              </div>
-            </div>
+        <div className="space-y-4">
+          {/* Method */}
+          <div className="grid grid-cols-2 gap-3">
+            {['bKash', 'Nagad'].map(m => (
+              <button key={m} onClick={() => setForm(f => ({ ...f, method: m }))}
+                className={`py-2.5 rounded-xl text-sm font-semibold transition-all
+                  ${form.method === m
+                    ? m === 'bKash' ? 'bg-pink-500 text-white' : 'bg-orange-500 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                {m}
+              </button>
+            ))}
           </div>
 
           <div>
-            <label className="label">Payment Method</label>
-            <div className="flex gap-3">
-              {['bKash', 'Nagad'].map(m => (
-                <label key={m} className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 cursor-pointer transition-all
-                  ${form.method === m ? 'border-tide-500 bg-tide-50 text-tide-700' : 'border-slate-200 text-slate-600'}`}>
-                  <input type="radio" name="method" value={m} checked={form.method === m}
-                    onChange={update('method')} className="sr-only" />
-                  <span className="font-medium">{m}</span>
-                </label>
-              ))}
-            </div>
+            <label className="label">Sender এর নাম *</label>
+            <input className="input-field" placeholder="যে পাঠিয়েছে তার নাম"
+              value={form.senderName} onChange={e => setForm(f => ({ ...f, senderName: e.target.value }))} />
           </div>
 
-          <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+          <div>
+            <label className="label">Sender এর Phone *</label>
+            <input className="input-field" placeholder="01XXXXXXXXX"
+              value={form.senderPhone} onChange={e => setForm(f => ({ ...f, senderPhone: e.target.value }))} />
+          </div>
+
+          <div>
+            <label className="label">Transaction ID (TrxID) *</label>
+            <input className="input-field font-mono" placeholder="8 অক্ষরের TrxID"
+              value={form.trxId} onChange={e => setForm(f => ({ ...f, trxId: e.target.value }))} />
+          </div>
+
+          <div>
+            <label className="label">Amount (টাকা) *</label>
+            <input type="number" className="input-field" placeholder="0"
+              value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
+          </div>
+
+          <button onClick={handleSubmit} disabled={submitting}
+            className="btn-primary w-full py-3 text-base justify-center">
             <Send className="w-4 h-4" />
-            {loading ? 'Submitting…' : 'Submit Payment for Review'}
+            {submitting ? 'Submit হচ্ছে...' : 'Payment Submit করুন'}
           </button>
-        </form>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+        <div className="text-xs text-blue-700 leading-relaxed">
+          Submit করার পর Admin verify করবেন। Approve হলে আপনার Receipts পেজে receipt দেখাবে।
+        </div>
       </div>
     </div>
   );
