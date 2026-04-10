@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Wallet, CheckCircle, Clock, CreditCard, ArrowRight, Bell, Pin, TrendingUp, XCircle } from 'lucide-react';
+import CodeVerification from './CodeVerification';
 
 export default function Dashboard() {
   const { profile } = useAuth();
   const [payments, setPayments] = useState([]);
   const [notices,  setNotices]  = useState([]);
   const [loading,  setLoading]  = useState(true);
+  const [verified, setVerified] = useState(profile?.codeVerified || false);
 
   useEffect(() => {
-    if (!profile?.uid) return;
+    setVerified(profile?.codeVerified || false);
+  }, [profile]);
+
+  useEffect(() => {
+    if (!profile?.uid || !verified) return;
     (async () => {
       const [pSnap, nSnap] = await Promise.all([
         getDocs(query(collection(db, 'payments'), where('uid', '==', profile.uid))),
@@ -31,7 +37,12 @@ export default function Dashboard() {
       setNotices(ns);
       setLoading(false);
     })();
-  }, [profile?.uid]);
+  }, [profile?.uid, verified]);
+
+  // Code verification screen
+  if (!verified) {
+    return <CodeVerification onVerified={() => setVerified(true)} />;
+  }
 
   const approved = payments.filter(p => p.status === 'approved');
   const pending  = payments.filter(p => p.status === 'pending');
@@ -65,10 +76,17 @@ export default function Dashboard() {
           <div>
             <p className="text-tide-300 text-sm">{greeting} 👋</p>
             <h1 className="font-display text-2xl font-bold">{profile?.name}</h1>
-            <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full mt-1
-              ${profile?.role === 'admin' ? 'bg-white/20 text-white' : 'bg-white/10 text-tide-200'}`}>
-              {profile?.role === 'admin' ? '🛡 Admin' : '👤 Member'}
-            </span>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full
+                ${profile?.role === 'admin' ? 'bg-white/20 text-white' : 'bg-white/10 text-tide-200'}`}>
+                {profile?.role === 'admin' ? '🛡 Admin' : '👤 Member'}
+              </span>
+              {profile?.memberCode && (
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-white/10 text-tide-200 font-mono">
+                  🪪 {profile.memberCode}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -76,9 +94,9 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { icon: Wallet,      label: 'মোট চাঁদা',  value: `৳${(profile?.totalPaid || 0).toLocaleString()}`, color: 'bg-tide-600',   text: 'text-tide-700' },
-          { icon: CheckCircle, label: 'Approved',    value: approved.length,  color: 'bg-green-500',  text: 'text-green-700' },
-          { icon: Clock,       label: 'Pending',     value: pending.length,   color: 'bg-yellow-500', text: 'text-yellow-700' },
+          { icon: Wallet,      label: 'মোট চাঁদা', value: `৳${(profile?.totalPaid || 0).toLocaleString()}`, color: 'bg-tide-600',   text: 'text-tide-700' },
+          { icon: CheckCircle, label: 'Approved',   value: approved.length,  color: 'bg-green-500',  text: 'text-green-700' },
+          { icon: Clock,       label: 'Pending',    value: pending.length,   color: 'bg-yellow-500', text: 'text-yellow-700' },
         ].map(({ icon: Icon, label, value, color, text }) => (
           <div key={label} className="bg-white rounded-2xl p-4 shadow-card text-center">
             <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center mx-auto mb-2`}>
@@ -90,7 +108,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Submit Payment Button */}
+      {/* Submit Payment */}
       <Link to="/pay"
         className="flex items-center justify-between bg-gradient-to-r from-tide-600 to-tide-700 text-white p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95">
         <div className="flex items-center gap-3">

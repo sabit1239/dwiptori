@@ -23,6 +23,7 @@ import AdminPhotos        from './pages/admin/AdminPhotos';
 import AdminActivity      from './pages/admin/AdminActivity';
 import AdminLedger        from './pages/admin/AdminLedger';
 import AdminNotices       from './pages/admin/AdminNotices';
+import AdminCodes         from './pages/admin/AdminCodes';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -58,6 +59,7 @@ export default function App() {
         <Route index             element={<AdminDash />} />
         <Route path="payments"   element={<AdminPayments />} />
         <Route path="members"    element={<AdminMembers />} />
+        <Route path="codes"      element={<AdminCodes />} />
         <Route path="committee"  element={<AdminCommittee />} />
         <Route path="gallery"    element={<AdminGallery />} />
         <Route path="ledger"     element={<AdminLedger />} />
