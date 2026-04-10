@@ -7,19 +7,27 @@ import { CreditCard, Copy, CheckCircle, AlertCircle, Send } from 'lucide-react';
 
 export default function PayPage() {
   const { profile } = useAuth();
-  const [numbers,  setNumbers]  = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const [numbers,    setNumbers]    = useState([]);
+  const [loading,    setLoading]    = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [copied,   setCopied]   = useState('');
+  const [copied,     setCopied]     = useState('');
   const [form, setForm] = useState({
     senderName: '', senderPhone: '', trxId: '', amount: '', method: 'bKash',
   });
 
   useEffect(() => {
-    getDocs(collection(db, 'paymentNumbers')).then(snap => {
-      setNumbers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false);
-    });
+    getDocs(collection(db, 'paymentNumbers'))
+      .then(snap => {
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.log('Numbers loaded:', data);
+        setNumbers(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Load error:', err.message);
+        toast.error('Load error: ' + err.message);
+        setLoading(false);
+      });
   }, []);
 
   function copyNumber(num) {
@@ -37,14 +45,12 @@ export default function PayPage() {
 
     setSubmitting(true);
     try {
-      // Duplicate TrxID check
       const dupSnap = await getDocs(query(collection(db, 'payments'), where('trxId', '==', form.trxId.trim())));
       if (!dupSnap.empty) {
         toast.error('এই TrxID আগেই submit হয়েছে!');
         setSubmitting(false);
         return;
       }
-
       await addDoc(collection(db, 'payments'), {
         uid:         profile.uid,
         memberName:  profile.name,
@@ -57,7 +63,6 @@ export default function PayPage() {
         status:      'pending',
         createdAt:   serverTimestamp(),
       });
-
       toast.success('Payment submit হয়েছে! Admin approval এর অপেক্ষায়।');
       setForm({ senderName: '', senderPhone: '', trxId: '', amount: '', method: 'bKash' });
     } catch(e) {
@@ -66,8 +71,8 @@ export default function PayPage() {
     setSubmitting(false);
   }
 
-  const bkash  = numbers.filter(n => n.type === 'bKash');
-  const nagad  = numbers.filter(n => n.type === 'Nagad');
+  const bkash = numbers.filter(n => n.type === 'bKash');
+  const nagad = numbers.filter(n => n.type === 'Nagad');
 
   return (
     <div className="max-w-lg mx-auto space-y-5 animate-fade-in">
@@ -76,7 +81,6 @@ export default function PayPage() {
         <p className="text-slate-500 mt-1">নিচের নম্বরে টাকা পাঠিয়ে form fill করুন</p>
       </div>
 
-      {/* Step 1 — Numbers */}
       <div className="glass-card p-5">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-7 h-7 rounded-full bg-tide-600 text-white text-sm font-bold flex items-center justify-center">১</div>
@@ -92,57 +96,38 @@ export default function PayPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {bkash.length > 0 && (
-              <div>
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">bKash</div>
-                {bkash.map(n => (
-                  <div key={n.id} className="flex items-center justify-between bg-pink-50 border border-pink-100 rounded-xl px-4 py-3">
-                    <div>
-                      <div className="font-mono font-bold text-slate-800">{n.number}</div>
-                      {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
-                    </div>
-                    <button onClick={() => copyNumber(n.number)}
-                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all
-                        ${copied === n.number ? 'bg-green-100 text-green-700' : 'bg-white text-pink-600 hover:bg-pink-100 border border-pink-200'}`}>
-                      {copied === n.number ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      {copied === n.number ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                ))}
+            {/* সব numbers দেখাও — filter ছাড়া */}
+            {numbers.map(n => (
+              <div key={n.id}
+                className={`flex items-center justify-between rounded-xl px-4 py-3 border
+                  ${n.type === 'bKash' ? 'bg-pink-50 border-pink-100' : 'bg-orange-50 border-orange-100'}`}>
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 mb-0.5">{n.type}</div>
+                  <div className="font-mono font-bold text-slate-800">{n.number}</div>
+                  {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
+                </div>
+                <button onClick={() => copyNumber(n.number)}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all
+                    ${copied === n.number
+                      ? 'bg-green-100 text-green-700'
+                      : n.type === 'bKash'
+                        ? 'bg-white text-pink-600 hover:bg-pink-100 border border-pink-200'
+                        : 'bg-white text-orange-600 hover:bg-orange-100 border border-orange-200'}`}>
+                  {copied === n.number ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied === n.number ? 'Copied!' : 'Copy'}
+                </button>
               </div>
-            )}
-            {nagad.length > 0 && (
-              <div>
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Nagad</div>
-                {nagad.map(n => (
-                  <div key={n.id} className="flex items-center justify-between bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
-                    <div>
-                      <div className="font-mono font-bold text-slate-800">{n.number}</div>
-                      {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
-                    </div>
-                    <button onClick={() => copyNumber(n.number)}
-                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all
-                        ${copied === n.number ? 'bg-green-100 text-green-700' : 'bg-white text-orange-600 hover:bg-orange-100 border border-orange-200'}`}>
-                      {copied === n.number ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      {copied === n.number ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            ))}
           </div>
         )}
       </div>
 
-      {/* Step 2 — Form */}
       <div className="glass-card p-5">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-7 h-7 rounded-full bg-tide-600 text-white text-sm font-bold flex items-center justify-center">২</div>
           <h2 className="font-semibold text-slate-800">Payment তথ্য দিন</h2>
         </div>
-
         <div className="space-y-4">
-          {/* Method */}
           <div className="grid grid-cols-2 gap-3">
             {['bKash', 'Nagad'].map(m => (
               <button key={m} onClick={() => setForm(f => ({ ...f, method: m }))}
@@ -154,31 +139,26 @@ export default function PayPage() {
               </button>
             ))}
           </div>
-
           <div>
             <label className="label">Sender এর নাম *</label>
             <input className="input-field" placeholder="যে পাঠিয়েছে তার নাম"
               value={form.senderName} onChange={e => setForm(f => ({ ...f, senderName: e.target.value }))} />
           </div>
-
           <div>
             <label className="label">Sender এর Phone *</label>
             <input className="input-field" placeholder="01XXXXXXXXX"
               value={form.senderPhone} onChange={e => setForm(f => ({ ...f, senderPhone: e.target.value }))} />
           </div>
-
           <div>
             <label className="label">Transaction ID (TrxID) *</label>
-            <input className="input-field font-mono" placeholder="8 অক্ষরের TrxID"
+            <input className="input-field font-mono" placeholder="TrxID"
               value={form.trxId} onChange={e => setForm(f => ({ ...f, trxId: e.target.value }))} />
           </div>
-
           <div>
             <label className="label">Amount (টাকা) *</label>
             <input type="number" className="input-field" placeholder="0"
               value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
           </div>
-
           <button onClick={handleSubmit} disabled={submitting}
             className="btn-primary w-full py-3 text-base justify-center">
             <Send className="w-4 h-4" />
@@ -187,7 +167,6 @@ export default function PayPage() {
         </div>
       </div>
 
-      {/* Info */}
       <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
         <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
         <div className="text-xs text-blue-700 leading-relaxed">
