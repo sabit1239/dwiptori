@@ -3,7 +3,7 @@ import { collection, getDocs, addDoc, query, where, serverTimestamp } from 'fire
 import { db } from '../../firebase';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { CreditCard, Copy, CheckCircle, AlertCircle, Send } from 'lucide-react';
+import { Copy, CheckCircle, AlertCircle, Send } from 'lucide-react';
 
 export default function PayPage() {
   const { profile } = useAuth();
@@ -18,13 +18,19 @@ export default function PayPage() {
   useEffect(() => {
     getDocs(collection(db, 'paymentNumbers'))
       .then(snap => {
-        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        console.log('Numbers loaded:', data);
+        const data = snap.docs.map(d => {
+          const d2 = d.data();
+          return {
+            id: d.id,
+            number: d2.number || d2.Number || '',
+            method: d2.method || d2.type || d2.Method || d2.Type || '',
+            name:   d2.name   || d2.Name   || '',
+          };
+        });
         setNumbers(data);
         setLoading(false);
       })
       .catch(err => {
-        console.error('Load error:', err.message);
         toast.error('Load error: ' + err.message);
         setLoading(false);
       });
@@ -33,7 +39,7 @@ export default function PayPage() {
   function copyNumber(num) {
     navigator.clipboard.writeText(num);
     setCopied(num);
-    toast.success('Number copied!');
+    toast.success('Copied!');
     setTimeout(() => setCopied(''), 2000);
   }
 
@@ -63,7 +69,7 @@ export default function PayPage() {
         status:      'pending',
         createdAt:   serverTimestamp(),
       });
-      toast.success('Payment submit হয়েছে! Admin approval এর অপেক্ষায়।');
+      toast.success('Payment submit হয়েছে!');
       setForm({ senderName: '', senderPhone: '', trxId: '', amount: '', method: 'bKash' });
     } catch(e) {
       toast.error('Failed: ' + e.message);
@@ -71,8 +77,34 @@ export default function PayPage() {
     setSubmitting(false);
   }
 
-  const bkash = numbers.filter(n => n.method === 'bKash');
-  const nagad = numbers.filter(n => n.method === 'Nagad');
+  const bkash = numbers.filter(n => n.method.toLowerCase().includes('bkash') || n.method.toLowerCase().includes('b-kash'));
+  const nagad  = numbers.filter(n => n.method.toLowerCase().includes('nagad') || n.method.toLowerCase().includes('নগদ'));
+  const others = numbers.filter(n => !bkash.includes(n) && !nagad.includes(n));
+
+  function NumberCard({ n }) {
+    const isBkash = n.method.toLowerCase().includes('bkash');
+    return (
+      <div className={`flex items-center justify-between rounded-xl px-4 py-3 border
+        ${isBkash ? 'bg-pink-50 border-pink-100' : 'bg-orange-50 border-orange-100'}`}>
+        <div>
+          <div className={`text-xs font-bold mb-0.5 ${isBkash ? 'text-pink-600' : 'text-orange-600'}`}>
+            {isBkash ? '💗 bKash' : '🟠 Nagad'}
+          </div>
+          <div className="font-mono font-bold text-slate-800">{n.number}</div>
+          {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
+        </div>
+        <button onClick={() => copyNumber(n.number)}
+          className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all
+            ${copied === n.number
+              ? 'bg-green-100 text-green-700'
+              : isBkash
+                ? 'bg-white text-pink-600 hover:bg-pink-100 border border-pink-200'
+                : 'bg-white text-orange-600 hover:bg-orange-100 border border-orange-200'}`}>
+          {copied === n.number ? <><CheckCircle className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto space-y-5 animate-fade-in">
@@ -86,7 +118,6 @@ export default function PayPage() {
           <div className="w-7 h-7 rounded-full bg-tide-600 text-white text-sm font-bold flex items-center justify-center">১</div>
           <h2 className="font-semibold text-slate-800">নম্বরে টাকা পাঠান</h2>
         </div>
-
         {loading ? (
           <div className="text-center text-slate-400 py-4">Loading...</div>
         ) : numbers.length === 0 ? (
@@ -96,28 +127,9 @@ export default function PayPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* সব numbers দেখাও — filter ছাড়া */}
-            {numbers.map(n => (
-              <div key={n.id}
-                className={`flex items-center justify-between rounded-xl px-4 py-3 border
-                  ${n.method === 'bKash' ? 'bg-pink-50 border-pink-100' : 'bg-orange-50 border-orange-100'}`}>
-                <div>
-                  <div className={`text-xs font-bold mb-0.5 ${n.method === "bKash" ? "text-pink-600" : "text-orange-600"}`}>{n.method === "bKash" ? "💗 bKash" : "🟠 Nagad"}</div>
-                  <div className="font-mono font-bold text-slate-800">{n.number}</div>
-                  {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
-                </div>
-                <button onClick={() => copyNumber(n.number)}
-                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all
-                    ${copied === n.number
-                      ? 'bg-green-100 text-green-700'
-                      : n.method === 'bKash'
-                        ? 'bg-white text-pink-600 hover:bg-pink-100 border border-pink-200'
-                        : 'bg-white text-orange-600 hover:bg-orange-100 border border-orange-200'}`}>
-                  {copied === n.number ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied === n.number ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-            ))}
+            {bkash.map(n => <NumberCard key={n.id} n={n} />)}
+            {nagad.map(n => <NumberCard key={n.id} n={n} />)}
+            {others.map(n => <NumberCard key={n.id} n={n} />)}
           </div>
         )}
       </div>
@@ -170,7 +182,7 @@ export default function PayPage() {
       <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
         <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
         <div className="text-xs text-blue-700 leading-relaxed">
-          Submit করার পর Admin verify করবেন। Approve হলে আপনার Receipts পেজে receipt দেখাবে।
+          Submit করার পর Admin verify করবেন। Approve হলে Receipts পেজে receipt দেখাবে।
         </div>
       </div>
     </div>
