@@ -9,19 +9,29 @@ import { Facebook, ChevronRight, Phone, MapPin, Menu, X, Image, LayoutDashboard,
 export default function HomePage() {
   const { user, profile, logout } = useAuth();
   const [committee, setCommittee] = useState([]);
+  const [users,     setUsers]     = useState([]);
   const [gallery,   setGallery]   = useState([]);
   const [menuOpen,  setMenuOpen]  = useState(false);
 
   useEffect(() => {
-    getDocs(collection(db, 'committee')).then(snap => {
-      setCommittee(snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    Promise.all([
+      getDocs(collection(db, 'committee')),
+      getDocs(collection(db, 'users')),
+      getDocs(collection(db, 'gallery')),
+    ]).then(([cSnap, uSnap, gSnap]) => {
+      setCommittee(cSnap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.order || 0) - (b.order || 0)));
-    });
-    getDocs(collection(db, 'gallery')).then(snap => {
-      setGallery(snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setUsers(uSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setGallery(gSnap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
     });
   }, []);
+
+  function getLinkedPhoto(email) {
+    if (!email) return null;
+    const u = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    return u?.photoURL && u?.photoStatus === 'approved' ? u.photoURL : null;
+  }
 
   function scrollTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -29,11 +39,11 @@ export default function HomePage() {
   }
 
   const NAV_LINKS = [
-    { label: 'Home',            id: 'hero' },
+    { label: 'Home',             id: 'hero' },
     { label: 'আমাদের সম্পর্কে', id: 'about' },
     { label: 'কমিটি',           id: 'committee' },
-    { label: 'Gallery',         id: 'gallery' },
-    { label: 'Contact',         id: 'contact' },
+    { label: 'Gallery',          id: 'gallery' },
+    { label: 'Contact',          id: 'contact' },
   ];
 
   return (
@@ -49,7 +59,6 @@ export default function HomePage() {
               <div className="text-xs text-tide-500 leading-tight">দ্বীপ তরী</div>
             </div>
           </div>
-
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ label, id }) => (
               <button key={id} onClick={() => scrollTo(id)}
@@ -58,14 +67,17 @@ export default function HomePage() {
               </button>
             ))}
           </div>
-
           <div className="hidden md:flex items-center gap-2">
             {user ? (
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-tide-400 to-tide-600 flex items-center justify-center text-white text-xs font-bold">
-                    {profile?.name?.[0]?.toUpperCase()}
-                  </div>
+                  {profile?.photoURL && profile?.photoStatus === 'approved' ? (
+                    <img src={profile.photoURL} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-tide-400 to-tide-600 flex items-center justify-center text-white text-xs font-bold">
+                      {profile?.name?.[0]?.toUpperCase()}
+                    </div>
+                  )}
                   <span className="text-sm font-medium text-slate-700">{profile?.name}</span>
                 </div>
                 <Link to="/dashboard" className="btn-primary py-2 px-4 text-sm">
@@ -87,12 +99,10 @@ export default function HomePage() {
               </div>
             )}
           </div>
-
           <button className="md:hidden p-2 rounded-lg text-slate-600" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
-
         {menuOpen && (
           <div className="md:hidden border-t border-slate-100 px-4 py-3 space-y-1 bg-white animate-fade-in">
             {NAV_LINKS.map(({ label, id }) => (
@@ -128,19 +138,23 @@ export default function HomePage() {
         )}
       </nav>
 
-      {/* Login হলে Dashboard banner দেখাবে */}
+      {/* Login banner */}
       {user && (
         <div className="bg-gradient-to-r from-tide-600 to-tide-700 text-white">
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">
-                {profile?.name?.[0]?.toUpperCase()}
-              </div>
+              {profile?.photoURL && profile?.photoStatus === 'approved' ? (
+                <img src={profile.photoURL} alt="" className="w-8 h-8 rounded-full object-cover border-2 border-white/30" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">
+                  {profile?.name?.[0]?.toUpperCase()}
+                </div>
+              )}
               <span className="text-sm">স্বাগতম, <strong>{profile?.name}</strong>!</span>
             </div>
             <Link to="/dashboard"
               className="flex items-center gap-1.5 bg-white text-tide-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-tide-50 transition-colors">
-              <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard এ যান
+              <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
             </Link>
           </div>
         </div>
@@ -166,16 +180,15 @@ export default function HomePage() {
             <span>Kutubdia Students Association, Cox's Bazar</span>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            {!user && (
-              <Link to="/register"
-                className="flex items-center gap-2 bg-white text-tide-800 font-semibold px-7 py-3 rounded-xl hover:bg-tide-50 transition-all shadow-lg">
-                সদস্য হিসেবে যোগ দিন <ChevronRight className="w-4 h-4" />
-              </Link>
-            )}
-            {user && (
+            {user ? (
               <Link to="/dashboard"
                 className="flex items-center gap-2 bg-white text-tide-800 font-semibold px-7 py-3 rounded-xl hover:bg-tide-50 transition-all shadow-lg">
                 <LayoutDashboard className="w-4 h-4" /> Dashboard এ যান
+              </Link>
+            ) : (
+              <Link to="/register"
+                className="flex items-center gap-2 bg-white text-tide-800 font-semibold px-7 py-3 rounded-xl hover:bg-tide-50 transition-all shadow-lg">
+                সদস্য হিসেবে যোগ দিন <ChevronRight className="w-4 h-4" />
               </Link>
             )}
             <a href="https://www.facebook.com/profile.php?id=61578642393037"
@@ -229,19 +242,27 @@ export default function HomePage() {
             <div className="text-center text-slate-400 py-8">কমিটির তথ্য শীঘ্রই আসছে...</div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {committee.map(m => (
-                <div key={m.id} className="bg-white rounded-2xl p-5 text-center shadow-card hover:shadow-glow transition-all">
-                  <div className="text-4xl mb-3">{m.emoji || '👤'}</div>
-                  <div className="font-semibold text-slate-800 text-sm mb-1">{m.name}</div>
-                  <div className="text-xs text-tide-600 font-medium">{m.role}</div>
-                  {m.phone && (
-                    <a href={`tel:${m.phone}`}
-                      className="flex items-center justify-center gap-1 text-xs text-slate-400 hover:text-tide-600 mt-2 transition-colors">
-                      <Phone className="w-3 h-3" /> {m.phone}
-                    </a>
-                  )}
-                </div>
-              ))}
+              {committee.map(m => {
+                const photo = getLinkedPhoto(m.email);
+                return (
+                  <div key={m.id} className="bg-white rounded-2xl p-5 text-center shadow-card hover:shadow-glow transition-all">
+                    {photo ? (
+                      <img src={photo} alt={m.name}
+                        className="w-16 h-16 rounded-2xl object-cover mx-auto mb-3 border-2 border-slate-100 shadow" />
+                    ) : (
+                      <div className="text-4xl mb-3">{m.emoji || '👤'}</div>
+                    )}
+                    <div className="font-semibold text-slate-800 text-sm mb-1">{m.name}</div>
+                    <div className="text-xs text-tide-600 font-medium">{m.role}</div>
+                    {m.phone && (
+                      <a href={`tel:${m.phone}`}
+                        className="flex items-center justify-center gap-1 text-xs text-slate-400 hover:text-tide-600 mt-2 transition-colors">
+                        <Phone className="w-3 h-3" /> {m.phone}
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -313,7 +334,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Join CTA — login না থাকলেই দেখাবে */}
+      {/* Join CTA */}
       {!user && (
         <section className="bg-gradient-to-br from-tide-700 to-tide-900 py-16">
           <div className="max-w-6xl mx-auto px-4 text-center text-white">
