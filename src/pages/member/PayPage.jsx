@@ -71,8 +71,8 @@ export default function PayPage() {
     setSubmitting(false);
   }
 
-  const bkash = numbers.filter(n => n.type === 'bKash');
-  const nagad = numbers.filter(n => n.type === 'Nagad');
+  const bkash = numbers.filter(n => n.method === 'bKash');
+  const nagad = numbers.filter(n => n.method === 'Nagad');
 
   return (
     <div className="max-w-lg mx-auto space-y-5 animate-fade-in">
@@ -100,9 +100,9 @@ export default function PayPage() {
             {numbers.map(n => (
               <div key={n.id}
                 className={`flex items-center justify-between rounded-xl px-4 py-3 border
-                  ${n.type === 'bKash' ? 'bg-pink-50 border-pink-100' : 'bg-orange-50 border-orange-100'}`}>
+                  ${n.method === 'bKash' ? 'bg-pink-50 border-pink-100' : 'bg-orange-50 border-orange-100'}`}>
                 <div>
-                  <div className={`text-xs font-bold mb-0.5 ${n.type === "bKash" ? "text-pink-600" : "text-orange-600"}`}>{n.type === "bKash" ? "💗 bKash" : "🟠 Nagad"}</div>
+                  <div className={`text-xs font-bold mb-0.5 ${n.method === "bKash" ? "text-pink-600" : "text-orange-600"}`}>{n.method === "bKash" ? "💗 bKash" : "🟠 Nagad"}</div>
                   <div className="font-mono font-bold text-slate-800">{n.number}</div>
                   {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
                 </div>
@@ -110,7 +110,7 @@ export default function PayPage() {
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all
                     ${copied === n.number
                       ? 'bg-green-100 text-green-700'
-                      : n.type === 'bKash'
+                      : n.method === 'bKash'
                         ? 'bg-white text-pink-600 hover:bg-pink-100 border border-pink-200'
                         : 'bg-white text-orange-600 hover:bg-orange-100 border border-orange-200'}`}>
                   {copied === n.number ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
