@@ -102,7 +102,7 @@ export default function PayPage() {
                 className={`flex items-center justify-between rounded-xl px-4 py-3 border
                   ${n.type === 'bKash' ? 'bg-pink-50 border-pink-100' : 'bg-orange-50 border-orange-100'}`}>
                 <div>
-                  <div className="text-xs font-semibold text-slate-500 mb-0.5">{n.type}</div>
+                  <div className={`text-xs font-bold mb-0.5 ${n.type === "bKash" ? "text-pink-600" : "text-orange-600"}`}>{n.type === "bKash" ? "💗 bKash" : "🟠 Nagad"}</div>
                   <div className="font-mono font-bold text-slate-800">{n.number}</div>
                   {n.name && <div className="text-xs text-slate-500">{n.name}</div>}
                 </div>
