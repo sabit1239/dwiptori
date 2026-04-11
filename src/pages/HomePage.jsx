@@ -17,7 +17,7 @@ export default function HomePage() {
     Promise.all([
       getDocs(collection(db, 'committee')),
       getDocs(collection(db, 'users')),
-      getDocs(collection(db, 'gallery')),
+      getDocs(collection(db, 'gallery')).catch(e => { console.error('Gallery error:', e.message); return { docs: [] }; }),
     ]).then(([cSnap, uSnap, gSnap]) => {
       setCommittee(cSnap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.order || 0) - (b.order || 0)));
