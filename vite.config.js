@@ -11,7 +11,7 @@ export default defineConfig({
       manifest: {
         name: 'Dwiptori — দ্বীপ তরী',
         short_name: 'Dwiptori',
-        description: 'দ্বীপের বুকে প্রদীপ্ত তারুণ্য — Kutubdia Students Association',
+        description: 'দ্বীপের বুকে প্রদীপ্ত তারুণ্য',
         theme_color: '#0369a1',
         background_color: '#ffffff',
         display: 'standalone',
@@ -19,45 +19,24 @@ export default defineConfig({
         scope: '/',
         start_url: '/',
         icons: [
-          {
-            src: 'logo.jpg',
-            sizes: '192x192',
-            type: 'image/jpeg',
-          },
-          {
-            src: 'logo.jpg',
-            sizes: '512x512',
-            type: 'image/jpeg',
-          },
-        ],
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'firebase-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'image-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
-              },
-            },
-          },
+          { src: 'logo.jpg', sizes: '192x192', type: 'image/jpeg' },
+          { src: 'logo.jpg', sizes: '512x512', type: 'image/jpeg' },
         ],
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':    ['react', 'react-dom', 'react-router-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          'vendor-ui':       ['lucide-react', 'react-hot-toast'],
+          'vendor-charts':   ['recharts'],
+          'vendor-date':     ['date-fns'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
 });
