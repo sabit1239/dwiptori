@@ -1,13 +1,28 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
 import logo from '../assets/logo.jpg';
-import { Facebook, ChevronRight, Phone, MapPin, Menu, X, Image, LayoutDashboard, LogOut } from 'lucide-react';
+import { Facebook, ChevronRight, Phone, MapPin, Menu, X, Image, LayoutDashboard, LogOut, Mail } from 'lucide-react';
+
+const DEFAULT = {
+  siteName:       'Dwiptori',
+  siteNameBn:     'দ্বীপ তরী',
+  tagline:        'দ্বীপের বুকে প্রদীপ্ত তারুণ্য',
+  taglineEn:      'Youth in the Heart of the Island',
+  about:          'দ্বীপ তরী (Dwiptori) হলো কুতুবদিয়া দ্বীপের শিক্ষার্থীদের একটি সংগঠন যা কক্সবাজারে অবস্থান করে। আমরা দ্বীপের তরুণ প্রজন্মকে একত্রিত করে শিক্ষা, সংস্কৃতি ও সমাজ উন্নয়নে কাজ করে যাচ্ছি।',
+  address:        "Kutubdia, Cox's Bazar, Bangladesh",
+  email:          '',
+  phone:          '',
+  facebook:       'https://www.facebook.com/profile.php?id=61578642393037',
+  established:    '2025',
+  contactMessage: 'Facebook এ message করুন',
+};
 
 export default function HomePage() {
   const { user, profile, logout } = useAuth();
+  const [settings,  setSettings]  = useState(DEFAULT);
   const [committee, setCommittee] = useState([]);
   const [users,     setUsers]     = useState([]);
   const [gallery,   setGallery]   = useState([]);
@@ -15,21 +30,23 @@ export default function HomePage() {
 
   useEffect(() => {
     Promise.all([
+      getDoc(doc(db, 'settings', 'site')),
       getDocs(collection(db, 'committee')),
       getDocs(collection(db, 'users')),
-      getDocs(collection(db, 'gallery')).catch(e => { console.error('Gallery error:', e.message); return { docs: [] }; }),
-    ]).then(([cSnap, uSnap, gSnap]) => {
+      getDocs(collection(db, 'gallery')),
+    ]).then(([sSnap, cSnap, uSnap, gSnap]) => {
+      if (sSnap.exists()) setSettings(s => ({ ...s, ...sSnap.data() }));
       setCommittee(cSnap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.order || 0) - (b.order || 0)));
       setUsers(uSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setGallery(gSnap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
-    });
+    }).catch(e => console.error('Load error:', e.message));
   }, []);
 
   function getLinkedPhoto(email) {
     if (!email) return null;
-    const u = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    const u = users.find(u => u.email?.toLowerCase() === email?.toLowerCase());
     return u?.photoURL && u?.photoStatus === 'approved' ? u.photoURL : null;
   }
 
@@ -55,8 +72,8 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <img src={logo} alt="Logo" className="w-10 h-10 rounded-full object-cover" />
             <div>
-              <div className="font-display font-bold text-lg text-tide-800 leading-tight">Dwiptori</div>
-              <div className="text-xs text-tide-500 leading-tight">দ্বীপ তরী</div>
+              <div className="font-display font-bold text-lg text-tide-800 leading-tight">{settings.siteName}</div>
+              <div className="text-xs text-tide-500 leading-tight">{settings.siteNameBn}</div>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-1">
@@ -103,6 +120,7 @@ export default function HomePage() {
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
+
         {menuOpen && (
           <div className="md:hidden border-t border-slate-100 px-4 py-3 space-y-1 bg-white animate-fade-in">
             {NAV_LINKS.map(({ label, id }) => (
@@ -172,12 +190,12 @@ export default function HomePage() {
           <div className="flex justify-center mb-8">
             <img src={logo} alt="Logo" className="w-32 h-32 rounded-full object-cover border-4 border-white/30 shadow-2xl" />
           </div>
-          <h1 className="font-display text-5xl sm:text-6xl font-bold mb-3">দ্বীপ তরী</h1>
-          <p className="text-tide-200 text-xl mb-3">Dwiptori</p>
-          <p className="text-white/80 text-lg max-w-lg mx-auto mb-4">দ্বীপের বুকে প্রদীপ্ত তারুণ্য</p>
+          <h1 className="font-display text-5xl sm:text-6xl font-bold mb-3">{settings.siteNameBn}</h1>
+          <p className="text-tide-200 text-xl mb-3">{settings.siteName}</p>
+          <p className="text-white/80 text-lg max-w-lg mx-auto mb-4">{settings.tagline}</p>
           <div className="flex items-center justify-center gap-2 text-tide-300 text-sm mb-10">
             <MapPin className="w-4 h-4" />
-            <span>Kutubdia Students Association, Cox's Bazar</span>
+            <span>{settings.address}</span>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             {user ? (
@@ -191,11 +209,12 @@ export default function HomePage() {
                 সদস্য হিসেবে যোগ দিন <ChevronRight className="w-4 h-4" />
               </Link>
             )}
-            <a href="https://www.facebook.com/profile.php?id=61578642393037"
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-7 py-3 rounded-xl transition-all shadow-lg">
-              <Facebook className="w-4 h-4" /> Facebook Page
-            </a>
+            {settings.facebook && (
+              <a href={settings.facebook} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-7 py-3 rounded-xl transition-all shadow-lg">
+                <Facebook className="w-4 h-4" /> Facebook Page
+              </a>
+            )}
           </div>
         </div>
         <div className="absolute bottom-0 left-0 right-0">
@@ -210,10 +229,7 @@ export default function HomePage() {
         <div className="text-center mb-12">
           <h2 className="font-display text-3xl font-bold text-slate-800 mb-3">আমাদের সম্পর্কে</h2>
           <div className="w-16 h-1 bg-tide-600 rounded-full mx-auto mb-6"></div>
-          <p className="text-slate-600 leading-relaxed max-w-2xl mx-auto text-lg">
-            দ্বীপ তরী (Dwiptori) হলো কুতুবদিয়া দ্বীপের শিক্ষার্থীদের একটি সংগঠন যা কক্সবাজারে অবস্থান করে।
-            আমরা দ্বীপের তরুণ প্রজন্মকে একত্রিত করে শিক্ষা, সংস্কৃতি ও সমাজ উন্নয়নে কাজ করে যাচ্ছি।
-          </p>
+          <p className="text-slate-600 leading-relaxed max-w-2xl mx-auto text-lg">{settings.about}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
@@ -293,18 +309,19 @@ export default function HomePage() {
       </section>
 
       {/* Facebook */}
-      <section className="bg-blue-600 py-16">
-        <div className="max-w-6xl mx-auto px-4 text-center text-white">
-          <Facebook className="w-12 h-12 mx-auto mb-4 opacity-90" />
-          <h2 className="font-display text-2xl font-bold mb-2">আমাদের Facebook Page এ যোগ দিন</h2>
-          <p className="text-blue-100 mb-6">সর্বশেষ আপডেট ও খবর পেতে আমাদের follow করুন</p>
-          <a href="https://www.facebook.com/profile.php?id=61578642393037"
-            target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-white text-blue-600 font-semibold px-8 py-3 rounded-xl hover:bg-blue-50 transition-all shadow-lg">
-            <Facebook className="w-5 h-5" /> Facebook এ যান
-          </a>
-        </div>
-      </section>
+      {settings.facebook && (
+        <section className="bg-blue-600 py-16">
+          <div className="max-w-6xl mx-auto px-4 text-center text-white">
+            <Facebook className="w-12 h-12 mx-auto mb-4 opacity-90" />
+            <h2 className="font-display text-2xl font-bold mb-2">আমাদের Facebook Page এ যোগ দিন</h2>
+            <p className="text-blue-100 mb-6">সর্বশেষ আপডেট ও খবর পেতে আমাদের follow করুন</p>
+            <a href={settings.facebook} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-white text-blue-600 font-semibold px-8 py-3 rounded-xl hover:bg-blue-50 transition-all shadow-lg">
+              <Facebook className="w-5 h-5" /> Facebook এ যান
+            </a>
+          </div>
+        </section>
+      )}
 
       {/* Contact */}
       <section id="contact" className="max-w-6xl mx-auto px-4 py-20">
@@ -313,24 +330,36 @@ export default function HomePage() {
           <div className="w-16 h-1 bg-tide-600 rounded-full mx-auto mb-6"></div>
         </div>
         <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-          {[
-            { icon: MapPin,   label: 'ঠিকানা',  value: "Kutubdia, Cox's Bazar, Bangladesh" },
-            { icon: Facebook, label: 'Facebook', value: 'Dwiptori — দ্বীপ তরী', link: 'https://www.facebook.com/profile.php?id=61578642393037' },
-            { icon: Phone,    label: 'যোগাযোগ', value: 'Facebook এ message করুন' },
-          ].map(({ icon: Icon, label, value, link }) => (
-            <div key={label} className="glass-card p-6 text-center hover:shadow-glow transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-tide-100 flex items-center justify-center mx-auto mb-3">
-                <Icon className="w-6 h-6 text-tide-600" />
-              </div>
-              <div className="font-semibold text-slate-700 mb-1">{label}</div>
-              {link ? (
-                <a href={link} target="_blank" rel="noopener noreferrer"
-                  className="text-sm text-tide-600 hover:underline">{value}</a>
-              ) : (
-                <div className="text-sm text-slate-500">{value}</div>
-              )}
+          <div className="glass-card p-6 text-center hover:shadow-glow transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-tide-100 flex items-center justify-center mx-auto mb-3">
+              <MapPin className="w-6 h-6 text-tide-600" />
             </div>
-          ))}
+            <div className="font-semibold text-slate-700 mb-1">ঠিকানা</div>
+            <div className="text-sm text-slate-500">{settings.address}</div>
+          </div>
+
+          {settings.facebook && (
+            <div className="glass-card p-6 text-center hover:shadow-glow transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-3">
+                <Facebook className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="font-semibold text-slate-700 mb-1">Facebook</div>
+              <a href={settings.facebook} target="_blank" rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline">{settings.siteName}</a>
+            </div>
+          )}
+
+          <div className="glass-card p-6 text-center hover:shadow-glow transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-tide-100 flex items-center justify-center mx-auto mb-3">
+              {settings.email ? <Mail className="w-6 h-6 text-tide-600" /> : <Phone className="w-6 h-6 text-tide-600" />}
+            </div>
+            <div className="font-semibold text-slate-700 mb-1">যোগাযোগ</div>
+            {settings.email ? (
+              <a href={`mailto:${settings.email}`} className="text-sm text-tide-600 hover:underline">{settings.email}</a>
+            ) : (
+              <div className="text-sm text-slate-500">{settings.contactMessage}</div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -339,7 +368,7 @@ export default function HomePage() {
         <section className="bg-gradient-to-br from-tide-700 to-tide-900 py-16">
           <div className="max-w-6xl mx-auto px-4 text-center text-white">
             <h2 className="font-display text-3xl font-bold mb-3">সদস্য হতে চান?</h2>
-            <p className="text-tide-200 mb-8">Dwiptori পরিবারে যোগ দিন</p>
+            <p className="text-tide-200 mb-8">{settings.siteName} পরিবারে যোগ দিন</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/register"
                 className="flex items-center justify-center gap-2 bg-white text-tide-800 font-semibold px-8 py-3 rounded-xl hover:bg-tide-50 transition-all">
@@ -358,10 +387,10 @@ export default function HomePage() {
       <footer className="bg-tide-950 text-tide-400 text-center py-6 text-xs">
         <div className="flex items-center justify-center gap-2 mb-2">
           <img src={logo} alt="Logo" className="w-6 h-6 rounded-full object-cover" />
-          <span className="text-white font-medium">Dwiptori — দ্বীপ তরী</span>
+          <span className="text-white font-medium">{settings.siteName} — {settings.siteNameBn}</span>
         </div>
-        <p>Kutubdia Students Association, Cox's Bazar · EST. 2025</p>
-        <p className="mt-1">© 2025 Dwiptori. All rights reserved.</p>
+        <p>{settings.address} · EST. {settings.established}</p>
+        <p className="mt-1">© {settings.established} {settings.siteName}. All rights reserved.</p>
       </footer>
     </div>
   );

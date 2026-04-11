@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.jpg';
-import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity, Camera, UserSquare, Image, BookOpen, Bell, Key } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Users, Phone, LogOut, Menu, X, Home, Activity, Camera, UserSquare, Image, BookOpen, Bell, Key, Settings } from 'lucide-react';
 
 const LINKS = [
   { to: '/admin',           label: 'Overview',       icon: LayoutDashboard, end: true },
@@ -16,6 +16,7 @@ const LINKS = [
   { to: '/admin/numbers',   label: 'Pay Numbers',    icon: Phone },
   { to: '/admin/photos',    label: 'Photo Approval', icon: Camera },
   { to: '/admin/activity',  label: 'Activity Log',   icon: Activity },
+  { to: '/admin/settings',  label: 'Site Settings',  icon: Settings },
 ];
 
 export default function AdminLayout() {

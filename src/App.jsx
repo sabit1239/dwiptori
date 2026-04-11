@@ -24,6 +24,7 @@ import AdminActivity      from './pages/admin/AdminActivity';
 import AdminLedger        from './pages/admin/AdminLedger';
 import AdminNotices       from './pages/admin/AdminNotices';
 import AdminCodes         from './pages/admin/AdminCodes';
+import AdminSettings      from './pages/admin/AdminSettings';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -67,6 +68,7 @@ export default function App() {
         <Route path="numbers"    element={<AdminNumbers />} />
         <Route path="photos"     element={<AdminPhotos />} />
         <Route path="activity"   element={<AdminActivity />} />
+        <Route path="settings"   element={<AdminSettings />} />
       </Route>
     </Routes>
   );
